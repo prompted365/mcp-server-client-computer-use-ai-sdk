@@ -1,10 +1,10 @@
 use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Instant};
 
 use axum::{
-    extract::{Json, Path, State},
+    extract::{Json, State},
     http::StatusCode,
     response::Json as JsonResponse,
-    routing::{get, post},
+    routing::post,
     Router,
 };
 use computer_use_ai_sdk::{Desktop, UIElement};
@@ -690,40 +690,40 @@ async fn mcp_handler(
 
 fn handle_initialize(id: Value) -> JsonResponse<Value> {
     // Define available tool functions
-    let find_elements_schema = json!({
-        "type": "object",
-        "properties": {
-            "selector": {
-                "type": "object",
-                "properties": {
-                    "app_name": {"type": "string"},
-                    "window_name": {"type": "string"},
-                    "locator": {"type": "string"},
-                    // ... other properties ...
-                },
-                "required": ["app_name", "locator"]
-            },
-            "max_results": {"type": "integer"},
-            "max_depth": {"type": "integer"}
-        },
-        "required": ["selector"]
-    });
-    
-    let click_element_schema = json!({
-        "type": "object",
-        "properties": {
-            "selector": {
-                "type": "object",
-                "properties": {
-                    "app_name": {"type": "string"},
-                    "locator": {"type": "string"},
-                    // ... other properties ...
-                },
-                "required": ["app_name", "locator"]
-            }
-        },
-        "required": ["selector"]
-    });
+    // let find_elements_schema = json!({
+    //     "type": "object",
+    //     "properties": {
+    //         "selector": {
+    //             "type": "object",
+    //             "properties": {
+    //                 "app_name": {"type": "string"},
+    //                 "window_name": {"type": "string"},
+    //                 "locator": {"type": "string"},
+    //                 // ... other properties ...
+    //             },
+    //             "required": ["app_name", "locator"]
+    //         },
+    //         "max_results": {"type": "integer"},
+    //         "max_depth": {"type": "integer"}
+    //     },
+    //     "required": ["selector"]
+    // });
+    // 
+    // let click_element_schema = json!({
+    //     "type": "object",
+    //     "properties": {
+    //         "selector": {
+    //             "type": "object",
+    //             "properties": {
+    //                 "app_name": {"type": "string"},
+    //                 "locator": {"type": "string"},
+    //                 // ... other properties ...
+    //             },
+    //             "required": ["app_name", "locator"]
+    //         }
+    //     },
+    //     "required": ["selector"]
+    // });
     
     let get_text_schema = json!({
         "type": "object",
@@ -737,58 +737,58 @@ fn handle_initialize(id: Value) -> JsonResponse<Value> {
         "required": ["app_name"]
     });
     
-    let type_text_schema = json!({
-        "type": "object",
-        "properties": {
-            "selector": {
-                "type": "object",
-                "properties": {
-                    "app_name": {"type": "string"},
-                    "locator": {"type": "string"},
-                    // ... other properties ...
-                },
-                "required": ["app_name", "locator"]
-            },
-            "text": {"type": "string"}
-        },
-        "required": ["selector", "text"]
-    });
+    // let type_text_schema = json!({
+    //     "type": "object",
+    //     "properties": {
+    //         "selector": {
+    //             "type": "object",
+    //             "properties": {
+    //                 "app_name": {"type": "string"},
+    //                 "locator": {"type": "string"},
+    //                 // ... other properties ...
+    //             },
+    //             "required": ["app_name", "locator"]
+    //         },
+    //         "text": {"type": "string"}
+    //     },
+    //     "required": ["selector", "text"]
+    // });
     
-    // Add new schemas for all endpoints
-    let press_key_schema = json!({
-        "type": "object",
-        "properties": {
-            "selector": {
-                "type": "object",
-                "properties": {
-                    "app_name": {"type": "string"},
-                    "locator": {"type": "string"},
-                    // ... other properties ...
-                },
-                "required": ["app_name", "locator"]
-            },
-            "key_combo": {"type": "string"}
-        },
-        "required": ["selector", "key_combo"]
-    });
+    // // Add new schemas for all endpoints
+    // let press_key_schema = json!({
+    //     "type": "object",
+    //     "properties": {
+    //         "selector": {
+    //             "type": "object",
+    //             "properties": {
+    //                 "app_name": {"type": "string"},
+    //                 "locator": {"type": "string"},
+    //                 // ... other properties ...
+    //             },
+    //             "required": ["app_name", "locator"]
+    //         },
+    //         "key_combo": {"type": "string"}
+    //     },
+    //     "required": ["selector", "key_combo"]
+    // });
     
-    let scroll_element_schema = json!({
-        "type": "object",
-        "properties": {
-            "selector": {
-                "type": "object",
-                "properties": {
-                    "app_name": {"type": "string"},
-                    "locator": {"type": "string"},
-                    // ... other properties ...
-                },
-                "required": ["app_name", "locator"]
-            },
-            "direction": {"type": "string"},
-            "amount": {"type": "number"}
-        },
-        "required": ["selector", "direction", "amount"]
-    });
+    // let scroll_element_schema = json!({
+    //     "type": "object",
+    //     "properties": {
+    //         "selector": {
+    //             "type": "object",
+    //             "properties": {
+    //                 "app_name": {"type": "string"},
+    //                 "locator": {"type": "string"},
+    //                 // ... other properties ...
+    //             },
+    //             "required": ["app_name", "locator"]
+    //         },
+    //         "direction": {"type": "string"},
+    //         "amount": {"type": "number"}
+    //     },
+    //     "required": ["selector", "direction", "amount"]
+    // });
     
     let list_interactable_elements_schema = json!({
         "type": "object",
@@ -1152,40 +1152,40 @@ async fn handle_execute_tool_function(
                 }
             }
         },
-        "scroll" => {
-            let request: ScrollElementRequest = match serde_json::from_value(execute_params.arguments) {
-                Ok(r) => r,
-                Err(e) => {
-                    return mcp_error_response(
-                        id, 
-                        -32602, 
-                        format!("invalid arguments: {}", e), 
-                        None
-                    );
-                }
-            };
+        // "scroll" => {
+        //     let request: ScrollElementRequest = match serde_json::from_value(execute_params.arguments) {
+        //         Ok(r) => r,
+        //         Err(e) => {
+        //             return mcp_error_response(
+        //                 id, 
+        //                 -32602, 
+        //                 format!("invalid arguments: {}", e), 
+        //                 None
+        //             );
+        //         }
+        //     };
             
-            match scroll_element_handler(State(state.clone()), Json(request)).await {
-                Ok(response) => {
-                    JsonResponse(json!({
-                        "jsonrpc": "2.0",
-                        "id": id,
-                        "result": {
-                            "success": response.0.success,
-                            "message": response.0.message
-                        }
-                    }))
-                },
-                Err((status, error_json)) => {
-                    mcp_error_response(
-                        id, 
-                        status.as_u16() as i32, 
-                        error_json.0["error"].as_str().unwrap_or("unknown error").to_string(),
-                        None
-                    )
-                }
-            }
-        },
+        //     match scroll_element_handler(State(state.clone()), Json(request)).await {
+        //         Ok(response) => {
+        //             JsonResponse(json!({
+        //                 "jsonrpc": "2.0",
+        //                 "id": id,
+        //                 "result": {
+        //                     "success": response.0.success,
+        //                     "message": response.0.message
+        //                 }
+        //             }))
+        //         },
+        //         Err((status, error_json)) => {
+        //             mcp_error_response(
+        //                 id, 
+        //                 status.as_u16() as i32, 
+        //                 error_json.0["error"].as_str().unwrap_or("unknown error").to_string(),
+        //                 None
+        //             )
+        //         }
+        //     }
+        // },
         "listInteractableElementsByIndex" => {
             let request: ListInteractableElementsRequest = match serde_json::from_value(execute_params.arguments) {
                 Ok(r) => r,
@@ -1535,122 +1535,122 @@ async fn press_key_handler(
     }
 }
 
-async fn scroll_element_handler(
-    State(_): State<Arc<AppState>>,
-    Json(request): Json<ScrollElementRequest>,
-) -> Result<JsonResponse<ActionResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
-    let desktop = match Desktop::new(
-        request.selector.as_ref().and_then(|s| s.use_background_apps).unwrap_or(false),
-        request.selector.as_ref().and_then(|s| s.activate_app).unwrap_or(false),
-    ) {
-        Ok(d) => d,
-        Err(e) => {
-            error!("failed to initialize desktop automation: {}", e);
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                JsonResponse(json!({
-                    "error": format!("failed to initialize desktop automation: {}", e)
-                })),
-            ));
-        }
-    };
+// async fn scroll_element_handler(
+//     State(_): State<Arc<AppState>>,
+//     Json(request): Json<ScrollElementRequest>,
+// ) -> Result<JsonResponse<ActionResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
+//     let desktop = match Desktop::new(
+//         request.selector.as_ref().and_then(|s| s.use_background_apps).unwrap_or(false),
+//         request.selector.as_ref().and_then(|s| s.activate_app).unwrap_or(false),
+//     ) {
+//         Ok(d) => d,
+//         Err(e) => {
+//             error!("failed to initialize desktop automation: {}", e);
+//             return Err((
+//                 StatusCode::INTERNAL_SERVER_ERROR,
+//                 JsonResponse(json!({
+//                     "error": format!("failed to initialize desktop automation: {}", e)
+//                 })),
+//             ));
+//         }
+//     };
 
-    // Determine where to scroll
-    match (&request.selector, &request.coordinates) {
-        // Case 1: Element-based scrolling (current behavior)
-        (Some(selector), _) => {
-            let app = match desktop.application(&selector.app_name) {
-                Ok(app) => app,
-                Err(e) => {
-                    error!("application not found: {}", e);
-                    return Err((
-                        StatusCode::NOT_FOUND,
-                        JsonResponse(json!({"error": format!("failed to find application: {}", e)})),
-                    ));
-                }
-            };
+//     // Determine where to scroll
+//     match (&request.selector, &request.coordinates) {
+//         // Case 1: Element-based scrolling (current behavior)
+//         (Some(selector), _) => {
+//             let app = match desktop.application(&selector.app_name) {
+//                 Ok(app) => app,
+//                 Err(e) => {
+//                     error!("application not found: {}", e);
+//                     return Err((
+//                         StatusCode::NOT_FOUND,
+//                         JsonResponse(json!({"error": format!("failed to find application: {}", e)})),
+//                     ));
+//                 }
+//             };
 
-            let element = match app.locator(&*selector.locator) {
-                Ok(locator) => locator.first(),
-                Err(e) => {
-                    error!("failed to find element: {}", e);
-                    return Err((
-                        StatusCode::NOT_FOUND,
-                        JsonResponse(json!({"error": format!("failed to find element: {}", e)})),
-                    ));
-                }
-            }
-            .map_err(|e| {
-                error!("failed to find element: {}", e);
-                (
-                    StatusCode::NOT_FOUND,
-                    JsonResponse(json!({"error": format!("failed to find element: {}", e)})),
-                )
-            })?;
+//             let element = match app.locator(&*selector.locator) {
+//                 Ok(locator) => locator.first(),
+//                 Err(e) => {
+//                     error!("failed to find element: {}", e);
+//                     return Err((
+//                         StatusCode::NOT_FOUND,
+//                         JsonResponse(json!({"error": format!("failed to find element: {}", e)})),
+//                     ));
+//                 }
+//             }
+//             .map_err(|e| {
+//                 error!("failed to find element: {}", e);
+//                 (
+//                     StatusCode::NOT_FOUND,
+//                     JsonResponse(json!({"error": format!("failed to find element: {}", e)})),
+//                 )
+//             })?;
 
-            match element {
-                Some(element) => {
-                    match element.scroll(&request.direction, request.amount) {
-                        Ok(_) => Ok(JsonResponse(ActionResponse {
-                            success: true,
-                            message: format!(
-                                "successfully scrolled {} by {}",
-                                request.direction, request.amount
-                            ),
-                        })),
-                        Err(e) => Err((
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            JsonResponse(json!({
-                                "error": format!("failed to scroll element: {}", e)
-                            })),
-                        )),
-                    }
-                }
-                None => Err((
-                    StatusCode::NOT_FOUND,
-                    JsonResponse(json!({"error": "no element found"})),
-                )),
-            }
-        },
+//             match element {
+//                 Some(element) => {
+//                     match element.scroll(&request.direction, request.amount) {
+//                         Ok(_) => Ok(JsonResponse(ActionResponse {
+//                             success: true,
+//                             message: format!(
+//                                 "successfully scrolled {} by {}",
+//                                 request.direction, request.amount
+//                             ),
+//                         })),
+//                         Err(e) => Err((
+//                             StatusCode::INTERNAL_SERVER_ERROR,
+//                             JsonResponse(json!({
+//                                 "error": format!("failed to scroll element: {}", e)
+//                             })),
+//                         )),
+//                     }
+//                 }
+//                 None => Err((
+//                     StatusCode::NOT_FOUND,
+//                     JsonResponse(json!({"error": "no element found"})),
+//                 )),
+//             }
+//         },
         
-        // Case 2: Coordinate-based scrolling (new functionality)
-        (None, Some(coords)) => {
-            match desktop.scroll_at_position(coords.x as f64, coords.y as f64, 
-                                            &request.direction, request.amount) {
-                Ok(_) => Ok(JsonResponse(ActionResponse {
-                    success: true,
-                    message: format!("successfully scrolled {} by {} at position ({}, {})", 
-                        request.direction, request.amount, coords.x, coords.y),
-                })),
-                Err(e) => {
-                    debug!("failed to scroll at position: {:?}", e);
-                    Err((
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        JsonResponse(json!({ "error": format!("failed to scroll at position: {:?}", e) }))
-                    ))
-                }
-            }
-        },
+//         // Case 2: Coordinate-based scrolling (new functionality)
+//         (None, Some(coords)) => {
+//             match desktop.scroll_at_position(coords.x as f64, coords.y as f64, 
+//                                             &request.direction, request.amount) {
+//                 Ok(_) => Ok(JsonResponse(ActionResponse {
+//                     success: true,
+//                     message: format!("successfully scrolled {} by {} at position ({}, {})", 
+//                         request.direction, request.amount, coords.x, coords.y),
+//                 })),
+//                 Err(e) => {
+//                     debug!("failed to scroll at position: {:?}", e);
+//                     Err((
+//                         StatusCode::INTERNAL_SERVER_ERROR,
+//                         JsonResponse(json!({ "error": format!("failed to scroll at position: {:?}", e) }))
+//                     ))
+//                 }
+//             }
+//         },
         
-        // Case 3: Current mouse position scrolling (new functionality)
-        (None, None) => {
-            match desktop.scroll_at_current_position(&request.direction, request.amount) {
-                Ok(_) => Ok(JsonResponse(ActionResponse {
-                    success: true,
-                    message: format!("successfully scrolled {} by {} at current position", 
-                        request.direction, request.amount),
-                })),
-                Err(e) => {
-                    debug!("failed to scroll at current position: {:?}", e);
-                    Err((
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        JsonResponse(json!({ "error": format!("failed to scroll at current position: {:?}", e) }))
-                    ))
-                }
-            }
-        }
-    }
-}
+//         // Case 3: Current mouse position scrolling (new functionality)
+//         (None, None) => {
+//             match desktop.scroll_at_current_position(&request.direction, request.amount) {
+//                 Ok(_) => Ok(JsonResponse(ActionResponse {
+//                     success: true,
+//                     message: format!("successfully scrolled {} by {} at current position", 
+//                         request.direction, request.amount),
+//                 })),
+//                 Err(e) => {
+//                     debug!("failed to scroll at current position: {:?}", e);
+//                     Err((
+//                         StatusCode::INTERNAL_SERVER_ERROR,
+//                         JsonResponse(json!({ "error": format!("failed to scroll at current position: {:?}", e) }))
+//                     ))
+//                 }
+//             }
+//         }
+//     }
+// }
 
 async fn list_interactable_elements_handler(
     State(state): State<Arc<AppState>>,

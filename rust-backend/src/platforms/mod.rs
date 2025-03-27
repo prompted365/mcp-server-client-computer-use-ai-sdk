@@ -41,15 +41,15 @@ pub trait AccessibilityEngine: Send + Sync {
     /// Convert to Any for downcasting
     fn as_any(&self) -> &dyn std::any::Any;
 
-    /// Scroll at a specific position on screen
-    fn scroll_at_position(&self, x: f64, y: f64, direction: &str, amount: f64) -> Result<(), AutomationError> {
-        Err(AutomationError::UnsupportedOperation("scroll_at_position not implemented for this platform".to_string()))
-    }
+    // //Scroll at a specific position on screen
+    // fn scroll_at_position(&self, x: f64, y: f64, direction: &str, amount: f64) -> Result<(), AutomationError> {
+    //     Err(AutomationError::UnsupportedOperation("scroll_at_position not implemented for this platform".to_string()))
+    // }
 
-    /// Scroll at the current mouse position
-    fn scroll_at_current_position(&self, direction: &str, amount: f64) -> Result<(), AutomationError> {
-        Err(AutomationError::UnsupportedOperation("scroll_at_current_position not implemented for this platform".to_string()))
-    }
+    // // Scroll at the current mouse position
+    // fn scroll_at_current_position(&self, direction: &str, amount: f64) -> Result<(), AutomationError> {
+    //     Err(AutomationError::UnsupportedOperation("scroll_at_current_position not implemented for this platform".to_string()))
+    // }
 }
 
 #[cfg(target_os = "linux")]

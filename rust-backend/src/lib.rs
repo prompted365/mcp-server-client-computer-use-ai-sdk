@@ -74,13 +74,13 @@ impl Desktop {
         self.engine.open_url(url, browser)
     }
 
-    /// Scroll at a specific position on screen
-    pub fn scroll_at_position(&self, x: f64, y: f64, direction: &str, amount: f64) -> Result<(), AutomationError> {
-        self.engine.scroll_at_position(x, y, direction, amount)
-    }
+    // /// Scroll at a specific position on screen
+    // pub fn scroll_at_position(&self, x: f64, y: f64, direction: &str, amount: f64) -> Result<(), AutomationError> {
+    //     self.engine.scroll_at_position(x, y, direction, amount)
+    // }
 
-    /// Scroll at the current mouse position
-    pub fn scroll_at_current_position(&self, direction: &str, amount: f64) -> Result<(), AutomationError> {
-        self.engine.scroll_at_current_position(direction, amount)
-    }
+    // /// Scroll at the current mouse position
+    // pub fn scroll_at_current_position(&self, direction: &str, amount: f64) -> Result<(), AutomationError> {
+    //     self.engine.scroll_at_current_position(direction, amount)
+    // }
 }

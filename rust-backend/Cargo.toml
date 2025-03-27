@@ -46,3 +46,6 @@ core-graphics = { version = "0.24.0", features = ["highsierra"] }
 [[bin]]
 name = "server"
 path = "src/bin/server.rs"
+
+[features]
+cargo-clippy = []

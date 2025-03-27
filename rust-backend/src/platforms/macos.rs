@@ -809,9 +809,6 @@ impl AccessibilityEngine for MacOSEngine {
             Selector::Filter(_) => Err(AutomationError::UnsupportedOperation(
                 "Filter selector not implemented".to_string(),
             )),
-            Selector::Chain(_) => Err(AutomationError::UnsupportedOperation(
-                "Chain selector not implemented for find_elements".to_string(),
-            )),
         }
     }
 
@@ -1001,15 +998,15 @@ impl AccessibilityEngine for MacOSEngine {
         self
     }
 
-    fn scroll_at_position(&self, x: f64, y: f64, direction: &str, amount: f64) -> Result<(), AutomationError> {
-        // Call the struct implementation directly
-        self.scroll_at_position(x, y, direction, amount)
-    }
+    // fn scroll_at_position(&self, x: f64, y: f64, direction: &str, amount: f64) -> Result<(), AutomationError> {
+    //     // Call the struct implementation directly
+    //     self.scroll_at_position(x, y, direction, amount)
+    // }
 
-    fn scroll_at_current_position(&self, direction: &str, amount: f64) -> Result<(), AutomationError> {
-        // Call the struct implementation directly
-        self.scroll_at_current_position(direction, amount)
-    }
+    // fn scroll_at_current_position(&self, direction: &str, amount: f64) -> Result<(), AutomationError> {
+    //     // Call the struct implementation directly
+    //     self.scroll_at_current_position(direction, amount)
+    // }
 }
 
 // Enum to represent which click method was used - move to module level
