@@ -64,6 +64,8 @@ npx tsx main.ts
 
 ## Usage
 
+Beginner level:
+
 In the CLI interface, type a prompt (click to copy):
 
 ```bash
@@ -78,13 +80,60 @@ give me interactable elements from messages app and then type hello world and se
 open arc browser
 ```
 
+Intermediate level:
+
+## Run an example chained tool
+
+```bash
+# Navigate to the server directory
+cd mcp-server-for-chained-tools-and-agents 
+
+# Install dependencies
+npm i 
+
+# Set your API key (alternatively, create a .env file)
+export ANTHROPIC_API_KEY=sk-ant...
+
+# Build the server
+npm run build
+```
+
+## Test tools through the MCP Inspector
+
+```bash
+# Install the MCP Inspector globally if you don't have it yet
+npm install -g @modelcontextprotocol/inspector
+
+# Make sure you're in the right directory (where .env is located)
+
+# Make sure your .env file has the necessary credentials
+# It should contain: ANTHROPIC_API_KEY=sk-ant...
+
+# Run the server with the inspector
+npx @modelcontextprotocol/inspector node build/server.js
+```
+
+This will launch the MCP Inspector in your browser:
+
+1. The Inspector will connect to your server via STDIO transport
+2. Click "Connect" to establish the connection 
+3. Click "List Tools" to see available tools, including `send-discord-message`
+4. Click on a tool to test it
+5. For the Discord tool, provide the following parameters:
+   - `messageType`: "dm" 
+   - `recipient`: "username" (the Discord username)
+   - `prompt`: "prompt to generate a message, e.g. generate a hellow world type of phrase"
+6. Click "Run" to execute the tool
+7. Check the logs in both the Inspector and your terminal
+
+Note: Your server communicates via STDIO transport only, so you cannot make direct HTTP/curl requests to it. All interactions must go through the MCP Inspector or another MCP client that supports STDIO transport.
+
 ## What do I do with it?
 
 - Build custom worfklows of agents to performs various actions
 - Build custom UI to make it easy for users to automate their computer work
 - Save workflow and run in cron
 - Combine with other MCP servers to do something cool, e.g.: fill out a google sheet based on the history of people i talk to throughout the day
-
 
 ## Request features and endpoints in github issues
 
