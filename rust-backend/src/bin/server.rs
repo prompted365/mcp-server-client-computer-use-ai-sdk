@@ -886,7 +886,7 @@ fn handle_initialize(id: Value) -> JsonResponse<Value> {
         // Keep functions you want to expose
         ToolFunctionDefinition {
             name: "getText".to_string(),
-            description: "extract text from an application window".to_string(),
+            description: "extract text from an application or browser window".to_string(),
             parameters: get_text_schema,
         },
         // Also comment out press_key if needed
@@ -907,22 +907,22 @@ fn handle_initialize(id: Value) -> JsonResponse<Value> {
         */
         ToolFunctionDefinition {
             name: "listInteractableElementsByIndex".to_string(),
-            description: "list all interactable elements in an application and cache them for subsequent by-index operations (must call this before any clickByIndex, typeByIndex, or pressKeyByIndex)".to_string(),
+            description: "list all interactable elements in an application and cache them for subsequent by-index operations. MUST BE CALLED FIRST before using any clickByIndex, typeByIndex, or pressKeyByIndex functions".to_string(),
             parameters: list_interactable_elements_schema,
         },
         ToolFunctionDefinition {
             name: "clickByIndex".to_string(),
-            description: "click on a ui element by its index".to_string(),
+            description: "click on a ui element by its index. REQUIRES listInteractableElementsByIndex to be called first to obtain valid indices".to_string(),
             parameters: click_by_index_schema,
         },
         ToolFunctionDefinition {
             name: "typeByIndex".to_string(),
-            description: "type text into a ui element by its index".to_string(),
+            description: "type text into a ui element by its index. REQUIRES listInteractableElementsByIndex to be called first to obtain valid indices".to_string(),
             parameters: type_by_index_schema,
         },
         ToolFunctionDefinition {
             name: "pressKeyByIndex".to_string(),
-            description: "press key combination on a ui element by its index".to_string(),
+            description: "press key combination on a ui element by its index. REQUIRES listInteractableElementsByIndex to be called first to obtain valid indices".to_string(),
             parameters: press_key_by_index_schema,
         },
         ToolFunctionDefinition {
@@ -1851,7 +1851,7 @@ async fn click_by_index_handler(
         return Err((
             StatusCode::BAD_REQUEST,
             JsonResponse(json!({
-                "error": "no element cache found, please run list_interactable_elements first"
+                "error": "no element cache found - you must call listInteractableElementsByIndex first to index the elements before using by-index operations"
             })),
         ));
     }
@@ -1931,7 +1931,7 @@ async fn type_by_index_handler(
         return Err((
             StatusCode::BAD_REQUEST,
             JsonResponse(json!({
-                "error": "no element cache found, please run list_interactable_elements first"
+                "error": "no element cache found - you must call listInteractableElementsByIndex first to index the elements before using by-index operations"
             })),
         ));
     }
@@ -2014,7 +2014,7 @@ async fn press_key_by_index_handler(
         return Err((
             StatusCode::BAD_REQUEST,
             JsonResponse(json!({
-                "error": "no element cache found, please run list_interactable_elements first"
+                "error": "no element cache found - you must call listInteractableElementsByIndex first to index the elements before using by-index operations"
             })),
         ));
     }
