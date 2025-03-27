@@ -1392,8 +1392,8 @@ impl UIElementImpl for MacOSUIElement {
         let mut hasher = DefaultHasher::new();
         stable_id.hash(&mut hasher);
         let id = hasher.finish() as usize;
-        debug!("stable id: {:?}", stable_id);
-        debug!("hash: {:?}", id);
+        // debug!("stable id: {:?}", stable_id);
+        // debug!("hash: {:?}", id);
         id
     }
 
@@ -1414,7 +1414,7 @@ impl UIElementImpl for MacOSUIElement {
             .map(|r| r.to_string())
             .unwrap_or_default();
 
-        debug!("Original role from AXUIElement: {}", role);
+        // debug!("Original role from AXUIElement: {}", role);
 
         // Map macOS-specific roles to generic roles
         // TODO: why first? any issue?
@@ -1436,7 +1436,7 @@ impl UIElementImpl for MacOSUIElement {
 
         // Special case for windows
         if is_window {
-            debug!("Getting attributes for window element");
+            // debug!("Getting attributes for window element");
 
             let mut attrs = UIElementAttributes {
                 role: "window".to_string(),
@@ -1460,10 +1460,10 @@ impl UIElementImpl for MacOSUIElement {
                 if let Ok(value) = self.element.0.attribute(&title_attr) {
                     if let Some(cf_string) = value.downcast_into::<CFString>() {
                         attrs.label = Some(cf_string.to_string());
-                        debug!(
-                            "Found window title via {}: {:?}",
-                            title_attr_name, attrs.label
-                        );
+                        // debug!(
+                        //     "Found window title via {}: {:?}",
+                        //     title_attr_name, attrs.label
+                        // );
                         break;
                     }
                 }
@@ -1472,7 +1472,7 @@ impl UIElementImpl for MacOSUIElement {
             // Try to get window position and size for debugging
             let pos_attr = AXAttribute::new(&CFString::new("AXPosition"));
             if let Ok(_) = self.element.0.attribute(&pos_attr) {
-                debug!("Window has position attribute");
+                // debug!("Window has position attribute");
             }
 
             // Try to get standard macOS window attributes
@@ -1504,7 +1504,7 @@ impl UIElementImpl for MacOSUIElement {
         };
 
         // Debug attribute collection
-        debug!("Collecting attributes for element");
+        // debug!("Collecting attributes for element");
 
         // Directly try common macOS attributes one by one
         let label_attr = AXAttribute::new(&CFString::new("AXTitle"));
@@ -1512,18 +1512,18 @@ impl UIElementImpl for MacOSUIElement {
             Ok(value) => {
                 if let Some(cf_string) = value.downcast_into::<CFString>() {
                     attrs.label = Some(cf_string.to_string());
-                    debug!("Found AXTitle: {:?}", attrs.label);
+                    // debug!("Found AXTitle: {:?}", attrs.label);
                 }
             }
-            Err(e) => {
-                debug!("Error getting AXTitle: {:?}", e);
+            Err(_e) => {
+                // debug!("Error getting AXTitle: {:?}", e);
 
                 // Fallback to AXLabel if AXTitle fails
                 let alt_label_attr = AXAttribute::new(&CFString::new("AXLabel"));
                 if let Ok(value) = self.element.0.attribute(&alt_label_attr) {
                     if let Some(cf_string) = value.downcast_into::<CFString>() {
                         attrs.label = Some(cf_string.to_string());
-                        debug!("Found AXLabel: {:?}", attrs.label);
+                        // debug!("Found AXLabel: {:?}", attrs.label);
                     }
                 }
             }
@@ -1535,17 +1535,17 @@ impl UIElementImpl for MacOSUIElement {
             Ok(value) => {
                 if let Some(cf_string) = value.downcast_into::<CFString>() {
                     attrs.description = Some(cf_string.to_string());
-                    debug!("Found AXDescription: {:?}", attrs.description);
+                    // debug!("Found AXDescription: {:?}", attrs.description);
                 }
             }
-            Err(e) => {
-                debug!("Error getting AXDescription: {:?}", e);
+            Err(_e) => {
+                // debug!("Error getting AXDescription: {:?}", e);
             }
         }
 
         // Collect all other attributes
         if let Ok(attr_names) = self.element.0.attribute_names() {
-            debug!("Found {} attributes", attr_names.len());
+            // debug!("Found {} attributes", attr_names.len());
 
             for name in attr_names.iter() {
                 let attr = AXAttribute::new(&name);
@@ -1562,13 +1562,13 @@ impl UIElementImpl for MacOSUIElement {
                                 | accessibility::Error::Ax(-25205)
                                 | accessibility::Error::Ax(-25204)
                         ) {
-                            debug!("Error getting attribute {:?}: {:?}", name, e);
+                            // debug!("Error getting attribute {:?}: {:?}", name, e);
                         }
                     }
                 }
             }
         } else {
-            debug!("Failed to get attribute names");
+            // debug!("Failed to get attribute names");
         }
 
         attrs
@@ -1862,6 +1862,9 @@ impl UIElementImpl for MacOSUIElement {
                     result
                 )));
             }
+            
+            // Add this debug log for success case
+            debug!("Successfully set text value via AXValue (standard approach)");
         }
 
         Ok(())
