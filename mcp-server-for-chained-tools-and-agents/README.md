@@ -1,0 +1,2 @@
+This is more advanced folder. Here we build a sample agent that combines multiple low level tools into a flow.
+We have an example tool that generates a DM/Channel message to anyone on your discord, try it out, follow getting started instructions in the root README
