@@ -1,8 +1,8 @@
 # Computer Use AI SDK
 
-* We’ve built an MCP server that controls computer
+* We've built an MCP server that controls computer
 
-* You’ve heard of OpenAI’s operator, you’ve heard of Claude’s computer use. Now the open source alternative: Computer Use SDK from screenpipe.
+* You've heard of OpenAI's operator, you've heard of Claude's computer use. Now the open source alternative: Computer Use SDK from screenpipe.
 
 * It's native on macOS—no virtual machine bs, no guardrails. Use it with any app or website however you want.
 
@@ -36,11 +36,17 @@ open arc browser
 git clone https://github.com/m13v/computer-use-ai-sdk.git
 cd computer-use-ai-sdk
 ```
+
 ```bash
 # Install Rust (if not already installed)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Install Node.js and npm (if not already installed)
 # Visit https://nodejs.org/ or use nvm
+
+# Set your Anthropic API key as an environment variable
+export ANTHROPIC_API_KEY=sk-ant-xxxx  # Replace with your actual Anthropic API key
+# For Windows, use: set ANTHROPIC_API_KEY=sk-ant-xxxx
+# For permanent setup, add to your shell profile (.bashrc, .zshrc, etc.)
 ```
 
 ```bash
