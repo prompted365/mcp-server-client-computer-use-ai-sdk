@@ -34,7 +34,7 @@ open arc browser
 
 ```bash
 git clone https://github.com/m13v/computer-use-ai-sdk.git
-cd computer-use-ai-sdk
+cd MCP-server-client-computer-use-ai-sdk
 ```
 
 ```bash
