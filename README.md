@@ -40,7 +40,7 @@ give me interactable elements from messages app and then type hello world and se
 ```
 
 ```bash
-open arc browser and scroll to the bottom of the page
+open arc browser
 ```
 
 
