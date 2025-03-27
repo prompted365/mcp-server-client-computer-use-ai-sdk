@@ -1,12 +1,16 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-// simple logging utility with colors for better readability
-const log = {
+// enhanced logging utility with colors for better readability
+export const log = {
   info: (msg: string, ...args: any[]) => console.log(`\x1b[36m[info]\x1b[0m ${msg}`, ...args), 
   success: (msg: string, ...args: any[]) => console.log(`\x1b[32m[success]\x1b[0m ${msg}`, ...args),
   error: (msg: string, ...args: any[]) => console.error(`\x1b[31m[error]\x1b[0m ${msg}`, ...args),
   warn: (msg: string, ...args: any[]) => console.log(`\x1b[33m[warn]\x1b[0m ${msg}`, ...args),
   debug: (msg: string, ...args: any[]) => console.log(`\x1b[90m[debug]\x1b[0m ${msg}`, ...args),
+  // New logging methods for specific UI elements
+  highlight: (msg: string, ...args: any[]) => console.log(`\x1b[1m\x1b[35m${msg}\x1b[0m`, ...args),
+  iteration: (msg: string, ...args: any[]) => console.log(`\x1b[36m${msg}\x1b[0m`, ...args),
+  response: (msg: string) => console.log(`\n\x1b[1m\x1b[37mresponse:\x1b[0m ${msg}`),
   tool: (name: string, result: any) => {
     const truncateJSON = (obj: any, maxLength = 500): string => {
       const str = JSON.stringify(obj);

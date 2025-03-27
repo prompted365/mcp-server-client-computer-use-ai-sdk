@@ -1,6 +1,7 @@
 import { processUserQuery } from './query-processing-engine';
 import readline from 'readline';
 import { desktopClient } from './start-here';
+import { log } from './start-here'; // Import the log utility
 
 // Create interface for user input
 const rl = readline.createInterface({
@@ -9,23 +10,25 @@ const rl = readline.createInterface({
 });
 
 // Start interactive session
-console.log("screenpipe mcp tool assistant - type 'exit' to quit");
+console.log("=== desktop control chat ===");
+console.log("(type \"exit\" to quit)");
 
 function askQuestion() {
-  rl.question("\nquery: ", async (input) => {
+  // Styled prompt
+  rl.question("\n\x1b[36mquery\x1b[0m: ", async (input) => {
     if (input.toLowerCase() === 'exit') {
-      console.log("shutting down...");
+      log.info("shutting down...");
       await desktopClient.disconnect();
       rl.close();
       process.exit(0);
     }
     
     try {
-      console.log("\nprocessing...");
+      log.highlight("\nprocessing...");
       const response = await processUserQuery(input);
-      console.log("\nresponse:", response);
+      log.response(response);
     } catch (error) {
-      console.error("error processing query:", error);
+      log.error("error processing query:", error);
     }
     
     askQuestion();

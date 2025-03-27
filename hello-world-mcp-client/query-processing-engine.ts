@@ -1,4 +1,4 @@
-import { desktopClient } from './start-here';
+import { desktopClient, log } from './start-here';
 import Anthropic from "@anthropic-ai/sdk";
 import type { Message } from "@anthropic-ai/sdk/resources/messages";
 
@@ -39,19 +39,19 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
   let totalTokensUsed = 0;
   let iterations = 0;
   
-  console.log("starting agent loop with query:", query);
+  log.highlight("starting agent loop with query:", query);
   
   while (isProcessing) {
     // Safety check - prevent infinite loops or excessive token usage
     iterations++;
     if (iterations > maxIterations) {
-      console.log(`reached maximum iterations (${maxIterations}), stopping loop`);
+      log.warn(`reached maximum iterations (${maxIterations}), stopping loop`);
       finalResponse += "\n[maximum iterations reached. process stopped.]";
       break;  
     }
     
     if (totalTokensUsed > maxTokens) {
-      console.log(`exceeded maximum token limit (${maxTokens}), stopping loop`);
+      log.warn(`exceeded maximum token limit (${maxTokens}), stopping loop`);
       finalResponse += "\n[maximum token limit reached. process stopped.]";
       break;
     }
@@ -66,7 +66,7 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
     
     // Track token usage
     totalTokensUsed += response.usage.output_tokens + response.usage.input_tokens;
-    console.log(`iteration ${iterations}: total tokens used: ${totalTokensUsed}`);
+    log.iteration(`iteration ${iterations}: total tokens used: ${totalTokensUsed}`);
     
     // Add Claude's response to conversation history
     conversationHistory.push({
@@ -126,11 +126,11 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
         role: "user" as const,
         content: toolResultContent
       });
-      console.log("added tool results, continuing agent loop");
+      log.info("added tool results, continuing agent loop");
     } else {
       // No tools used, we're done
       isProcessing = false;
-      console.log("agent loop complete, no more tool calls");
+      log.success("agent loop complete, no more tool calls");
     }
   }
   
