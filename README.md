@@ -51,16 +51,30 @@ export ANTHROPIC_API_KEY=sk-ant-xxxx  # Replace with your actual Anthropic API k
 
 ```bash
 # run backend server
-cd mcp-server-for-low-level-computer-use
+cd mcp-server-os-level
 cargo run --bin server
 # keep it running
 ```
 
+### Option 1: CLI Interface
+
 ```bash
-# run frontend client in a new terminal
-cd hello-world-mcp-client
+# run CLI interface client in a new terminal  (good for debugging)
+cd mcp-client-cli-interface
+npm install  # install dependencies first
 npx tsx main.ts
 ```
+
+### Option 2: Web app Interface
+
+```bash
+# run CLI interface client in a new terminal  (good for debugging)
+cd mcp-client-nextjs
+npm install  # install dependencies first
+npm run dev
+# go to provided localhost web page
+```
+
 
 ## Usage
 
@@ -86,7 +100,7 @@ Intermediate level:
 
 ```bash
 # Navigate to the server directory
-cd mcp-server-for-chained-tools-and-agents 
+cd mcp-server-chained-tools 
 
 # Install dependencies
 npm i 
