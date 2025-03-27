@@ -6,16 +6,23 @@
 ```bash
 git clone https://github.com/m13v/computer-use-ai-sdk.git
 cd computer-use-ai-sdk
+```
+```bash
 # Install Rust (if not already installed)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Install Node.js and npm (if not already installed)
 # Visit https://nodejs.org/ or use nvm
+```
 
+```bash
 # run backend server
 cd rust-backend
 cargo run --bin server
+# keep it running
+```
 
-# run frontend client
+```bash
+# run frontend client in a new terminal
 cd hello-world-mcp-client
 npx tsx main.ts
 ```
