@@ -51,7 +51,7 @@ export ANTHROPIC_API_KEY=sk-ant-xxxx  # Replace with your actual Anthropic API k
 
 ```bash
 # run backend server
-cd rust-backend
+cd mcp-server-for-low-level-computer-use
 cargo run --bin server
 # keep it running
 ```
