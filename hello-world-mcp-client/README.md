@@ -1,0 +1,1 @@
+This is a client example, it has a simple CLI interface that helps to get started and better understand how everything works
