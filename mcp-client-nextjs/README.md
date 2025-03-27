@@ -1,0 +1,1 @@
+This is a NexJS app that serves as MCP Client
