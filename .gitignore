@@ -1,0 +1,40 @@
+# node/typescript
+node_modules/
+dist/
+build/
+*.log
+.npm
+.env
+.env.*
+*.tsbuildinfo
+
+# rust
+/target/
+**/target/
+Cargo.lock
+**/*.rs.bk
+
+# os specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-*
+
+# logs and databases
+*.log
+*.sql
+*.sqlite
+*.sqlite3
+
+# build artifacts
+*.o
+*.a
+*.so
