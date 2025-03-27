@@ -1,5 +1,30 @@
 # Computer Use AI SDK
 
+* We’ve built an MCP server that controls computer. And so can you.
+
+* You’ve heard of OpenAI’s operator, you’ve heard of Claude’s computer use. Now the open source alternative: Computer Use SDK from screenpipe.
+
+* You can now build your own agents getting started with our simple Hello World Template using our MCP server and client.
+
+* There are the tools that our MCP Server provides out of the box:
+    * Launch apps
+        * Read content
+        * Click
+        * Enter text
+        * Press keys
+
+* These will be computational primitives to allow the AI to control your computer and do your tasks for you. What will you build? Come check us out at https://screenpi.pe
+
+## Demos
+
+get latest whatsapp messages
+![Image](https://github.com/user-attachments/assets/6401c930-07e5-4459-b54c-a8c70fdca73f)
+
+send message in imessage
+![Image](https://github.com/user-attachments/assets/46e02640-7ad2-4643-b213-df03abfddba7)
+
+open arc browser 
+![Image](https://github.com/user-attachments/assets/8656be95-951d-4f13-8ee9-41babb821abb)
 
 ## Get started
 
