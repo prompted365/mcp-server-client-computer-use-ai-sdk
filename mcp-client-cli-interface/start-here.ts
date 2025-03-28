@@ -12,17 +12,18 @@ export const log = {
   iteration: (msg: string, ...args: any[]) => console.log(`\x1b[36m${msg}\x1b[0m`, ...args),
   response: (msg: string) => console.log(`\n\x1b[1m\x1b[37mresponse:\x1b[0m ${msg}`),
   tool: (name: string, result: any) => {
+    // Truncate long results
     const truncateJSON = (obj: any, maxLength = 500): string => {
+      if (obj === undefined || obj === null) {
+        return String(obj);
+      }
       const str = JSON.stringify(obj);
       if (str.length <= maxLength) return str;
       return str.substring(0, maxLength) + '... [truncated]';
     };
     
-    if (result?.isError) {
-      console.log(`\x1b[31m[tool ${name}]\x1b[0m ${truncateJSON(result)}`);
-    } else {
-      console.log(`\x1b[32m[tool ${name}]\x1b[0m ${truncateJSON(result)}`);
-    }
+    // One-line format with truncation
+    console.log(`\n\x1b[1m\x1b[37m${name} result:\x1b[0m ${truncateJSON(result)}`);
   }
 };
 
@@ -121,8 +122,14 @@ class DesktopControlClient {
         arguments: args
       });
       
-      log.tool(name, response.result);
-      return response.result;
+      // Check if result exists before logging
+      if (response && 'result' in response) {
+        log.tool(name, response.result);
+        return response.result;
+      } else {
+        log.tool(name, response); // Log the entire response if result is missing
+        return response; // Still return whatever we got
+      }
     } catch (error) {
       log.error(`error calling tool "${name}":`, error);
       throw error;
