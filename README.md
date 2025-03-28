@@ -42,11 +42,6 @@ cd MCP-server-client-computer-use-ai-sdk
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Install Node.js and npm (if not already installed)
 # Visit https://nodejs.org/ or use nvm
-
-# Set your Anthropic API key as an environment variable
-export ANTHROPIC_API_KEY=sk-ant-xxxx  # Replace with your actual Anthropic API key
-# For Windows, use: set ANTHROPIC_API_KEY=sk-ant-xxxx
-# For permanent setup, add to your shell profile (.bashrc, .zshrc, etc.)
 ```
 
 ```bash
@@ -62,6 +57,12 @@ cargo run --bin server
 # run CLI interface client in a new terminal  (good for debugging)
 cd mcp-client-cli-interface
 npm install  # install dependencies first
+
+# Set your Anthropic API key as an environment variable
+export ANTHROPIC_API_KEY=sk-ant-xxxx  # Replace with your actual Anthropic API key
+# For Windows, use: set ANTHROPIC_API_KEY=sk-ant-xxxx
+# For permanent setup, add to your shell profile (.bashrc, .zshrc, etc.)
+
 npx tsx main.ts
 ```
 
@@ -71,6 +72,12 @@ npx tsx main.ts
 # run CLI interface client in a new terminal  (good for debugging)
 cd mcp-client-nextjs
 npm install  # install dependencies first
+
+# Set API key via command line
+echo "ANTHROPIC_API_KEY=sk-ant-XXXXXXXX" > .env  # replace XXXXXXXX with your actual key
+# Or append if you want to keep other env variables
+# echo "ANTHROPIC_API_KEY=sk-ant-XXXXXXXX" >> .env
+
 npm run dev
 # go to provided localhost web page
 ```
