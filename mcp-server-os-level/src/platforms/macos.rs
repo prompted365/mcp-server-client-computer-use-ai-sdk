@@ -894,7 +894,7 @@ impl AccessibilityEngine for MacOSEngine {
     fn open_application(&self, app_name: &str) -> Result<UIElement, AutomationError> {
         debug!("opening application: {}", app_name);
 
-        // Use the macOS 'open' command to launch the application
+        // Launch the application
         let status = std::process::Command::new("open")
             .args(["-a", app_name])
             .status()
@@ -910,13 +910,62 @@ impl AccessibilityEngine for MacOSEngine {
             )));
         }
 
-        // Give the application a moment to launch
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        // Use a more efficient approach - directly get the app PID without full system scan
+        let mut retry_count = 0;
+        let max_retries = 10;
+        let retry_delay = std::time::Duration::from_millis(100);
+        
+        // Retry loop with targeted scanning
+        while retry_count < max_retries {
+            debug!("looking for newly launched app '{}', attempt {}/{}", 
+                   app_name, retry_count + 1, max_retries);
+            
+            // Try to find the app directly without full refresh
+            unsafe {
+                use objc::{class, msg_send, sel, sel_impl};
+                
+                let workspace_class = class!(NSWorkspace);
+                let shared_workspace: *mut objc::runtime::Object = 
+                    msg_send![workspace_class, sharedWorkspace];
+                let apps: *mut objc::runtime::Object = 
+                    msg_send![shared_workspace, runningApplications];
+                let count: usize = msg_send![apps, count];
+                
+                for i in 0..count {
+                    let app: *mut objc::runtime::Object = msg_send![apps, objectAtIndex:i];
+                    let app_name_obj: *mut objc::runtime::Object = msg_send![app, localizedName];
+                    
+                    if !app_name_obj.is_null() {
+                        let found_name: &str = {
+                            let nsstring = app_name_obj as *const objc::runtime::Object;
+                            let bytes: *const std::os::raw::c_char = 
+                                msg_send![nsstring, UTF8String];
+                            let len: usize = msg_send![nsstring, lengthOfBytesUsingEncoding:4];
+                            let bytes_slice = std::slice::from_raw_parts(bytes as *const u8, len);
+                            std::str::from_utf8_unchecked(bytes_slice)
+                        };
+                        
+                        if found_name.to_lowercase() == app_name.to_lowercase() {
+                            // Found the app, get its PID and create element directly
+                            let pid: i32 = msg_send![app, processIdentifier];
+                            debug!("found newly launched app '{}' with pid {}", app_name, pid);
+                            
+                            // Create element directly instead of full scan
+                            let app_element = ThreadSafeAXUIElement::application(pid);
+                            return Ok(self.wrap_element(app_element));
+                        }
+                    }
+                }
+            }
+            
+            // App not found yet, sleep and retry
+            std::thread::sleep(retry_delay);
+            retry_count += 1;
+        }
 
-        // Refresh accessibility tree with the new application
+        // Fallback to existing approach if retries fail
+        debug!("retries exceeded, falling back to standard method");
         self.refresh_accessibility_tree(Some(app_name))?;
-
-        // Get the launched application element
         self.get_application_by_name(app_name)
     }
 
