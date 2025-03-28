@@ -12,7 +12,6 @@ use core_foundation::array::{
 };
 use core_foundation::base::{CFGetTypeID, TCFType};
 use core_foundation::boolean::CFBoolean;
-use core_foundation::dictionary::CFDictionary;
 use core_foundation::string::CFString;
 use core_graphics::event::CGEventType;
 use core_graphics::event::CGMouseButton;
