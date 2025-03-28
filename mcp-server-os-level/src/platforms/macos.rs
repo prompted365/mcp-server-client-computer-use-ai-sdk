@@ -2328,7 +2328,7 @@ pub fn check_accessibility_permissions(show_prompt: bool) -> Result<bool, Automa
                     "Accessibility permissions not granted. Go to System Preferences > Security & Privacy > Privacy > Accessibility and add this application.".to_string(),
                 ))
             } else {
-                debug!("accessibility permissions not granted, prompt displayed");
+                debug!("accessibility permissions not prompted, prompt displayed");
                 Ok(false)
             }
         }

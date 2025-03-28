@@ -2395,7 +2395,7 @@ fn check_os_permissions() {
     // Only check on macOS
     #[cfg(target_os = "macos")]
     {
-        use crate::platforms::macos::check_accessibility_permissions;
+        use computer_use_ai_sdk::platforms::macos::check_accessibility_permissions;
         
         match check_accessibility_permissions(true) {
             Ok(granted) => {
