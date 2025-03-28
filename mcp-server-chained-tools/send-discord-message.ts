@@ -30,36 +30,6 @@ export function registerSendDiscordMessageTool(
       steps.push(`Starting to send a ${destination === "server" ? "server" : "DM"} message to "${name}"`);
       
       try {
-        log.info(`generating message content from prompt: ${prompt}`);
-        steps.push("Generating message content");
-        
-        // Generate message content using Claude
-        const response = await anthropic.messages.create({
-          model: CLAUDE_MODEL,
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user", 
-              content: prompt
-            }
-          ],
-        });
-        
-        const messageContent = response.content[0].text;
-        steps.push("Message content generated successfully");
-        
-        if (dry_run) {
-          log.success("dry run mode: would send message to Discord");
-          steps.push("Dry run mode - skipping actual message sending");
-          
-          return {
-            content: [{
-              type: "text",
-              text: `[DRY RUN] Would send message to ${destination} "${name}":\n\n${messageContent}`
-            }]
-          };
-        }
-        
         log.step("opening discord application");
         steps.push("Opening Discord application");
         
@@ -109,6 +79,62 @@ export function registerSendDiscordMessageTool(
         log.info(`found ${elements.length} elements`);
         log.info(`top 50 elements: 
 ${elements.slice(0, 50).map((e: any) => `[${e.index}] ${e.role}: ${e.text.substring(0, 50)}`).join('\n')}`);
+        
+        // Extract conversation context from Discord elements
+        log.step("extracting conversation context");
+        steps.push("Extracting conversation context from Discord");
+        
+        // Format all elements directly into conversation context
+        const conversationContext = elements.map((e: any) => 
+          `[${e.index}] ${e.role}: ${e.text}`
+        ).join('\n');
+        
+        log.info(`formatted conversation context: ${conversationContext.substring(0, 200)}...`);
+        steps.push("Conversation context formatted directly from elements");
+        
+        // Now generate message content using the conversation context
+        log.info(`generating message content from prompt with conversation context`);
+        steps.push("Generating message content with conversation context");
+        
+        // Generate message content using Claude
+        const response = await anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 1000,
+          messages: [
+            {
+              role: "user", 
+              content: prompt
+            }
+          ],
+          system: `You are generating a message that will be sent directly to Discord without modification.
+Keep messages very short and concise - Discord works best with brief messages.
+Use emojis appropriately to enhance your message tone and meaning.
+You can use markdown formatting (bold, italic, code blocks) and mentions when needed.
+Maintain a conversational, casual tone suitable for Discord.
+Do not include explanations or notes - just output the exact message text to be sent.
+Do not include quotes or any metadata.
+The message should be ready to copy-paste into Discord.
+
+DISCORD APP CONTEXT:
+${conversationContext}
+
+Consider this conversation context when crafting your response. Make your message relevant to the ongoing conversation, but don't explicitly reference that you've seen the context.`
+        });
+        
+        const messageContent = response.content[0].text;
+        steps.push("Message content generated successfully");
+        
+        if (dry_run) {
+          log.success("dry run mode: would send message to Discord");
+          steps.push("Dry run mode - skipping actual message sending");
+          
+          return {
+            content: [{
+              type: "text",
+              text: `[DRY RUN] Would send message to ${destination} "${name}":\n\n${messageContent}`
+            }]
+          };
+        }
         
         // Step 1: Navigate to the server or DM
         log.step("navigating to destination");
