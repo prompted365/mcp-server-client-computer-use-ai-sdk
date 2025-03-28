@@ -127,8 +127,14 @@ class DesktopControlClient {
         arguments: args
       });
       
-      log.tool(name, response.result);
-      return response.result;
+      // Check if result exists before logging
+      if (response && 'result' in response) {
+        log.tool(name, response.result);
+        return response.result;
+      } else {
+        log.tool(name, response); // Log the entire response if result is missing
+        return response; // Still return whatever we got
+      }
     } catch (error) {
       log.error(`error calling tool "${name}":`, error);
       throw error;
