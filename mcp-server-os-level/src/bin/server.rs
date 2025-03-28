@@ -2344,6 +2344,9 @@ async fn main() -> anyhow::Result<()> {
     
     info!("starting ui automation server");
     
+    // Check permissions early - add this line
+    check_os_permissions();
+    
     // Create app state
     let app_state = Arc::new(AppState {
         element_cache: Arc::new(Mutex::new(None)),
@@ -2385,4 +2388,48 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     
     Ok(())
+}
+
+// Add this function right after main imports but before the types
+fn check_os_permissions() {
+    // Only check on macOS
+    #[cfg(target_os = "macos")]
+    {
+        use crate::platforms::macos::check_accessibility_permissions;
+        
+        match check_accessibility_permissions(true) {
+            Ok(granted) => {
+                if !granted {
+                    info!("accessibility permissions: prompt shown to user");
+                    // Sleep to give user time to respond to the prompt
+                    std::thread::sleep(std::time::Duration::from_secs(2));
+                    
+                    // Check again without prompt
+                    match check_accessibility_permissions(false) {
+                        Ok(_) => info!("accessibility permissions now granted"),
+                        Err(e) => {
+                            error!("accessibility permissions check failed: {}", e);
+                            info!("**************************************************************");
+                            info!("* ACCESSIBILITY PERMISSIONS REQUIRED                          *");
+                            info!("* Go to System Preferences > Security & Privacy > Privacy >   *");
+                            info!("* Accessibility and add this application.                     *");
+                            info!("* Without this permission, UI automation will not function.   *");
+                            info!("**************************************************************");
+                        }
+                    }
+                } else {
+                    info!("accessibility permissions already granted");
+                }
+            },
+            Err(e) => {
+                error!("accessibility permissions check failed: {}", e);
+                info!("**************************************************************");
+                info!("* ACCESSIBILITY PERMISSIONS REQUIRED                          *");
+                info!("* Go to System Preferences > Security & Privacy > Privacy >   *");
+                info!("* Accessibility and add this application.                     *");
+                info!("* Without this permission, UI automation will not function.   *");
+                info!("**************************************************************");
+            }
+        }
+    }
 }

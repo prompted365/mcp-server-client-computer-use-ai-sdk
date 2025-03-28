@@ -120,31 +120,8 @@ pub struct MacOSEngine {
 
 impl MacOSEngine {
     pub fn new(use_background_apps: bool, activate_app: bool) -> Result<Self, AutomationError> {
-        // Check accessibility permissions using FFI directly
-        // Since accessibility::AXIsProcessTrustedWithOptions is not available
-        let accessibility_enabled = unsafe {
-            use core_foundation::dictionary::CFDictionaryRef;
-
-            #[link(name = "ApplicationServices", kind = "framework")]
-            extern "C" {
-                fn AXIsProcessTrustedWithOptions(options: CFDictionaryRef) -> bool;
-            }
-
-            let check_attr = CFString::new("AXTrustedCheckOptionPrompt");
-            let options = CFDictionary::from_CFType_pairs(&[(
-                check_attr.as_CFType(),
-                CFBoolean::true_value().as_CFType(),
-            )])
-            .as_concrete_TypeRef();
-
-            AXIsProcessTrustedWithOptions(options)
-        };
-
-        if !accessibility_enabled {
-            return Err(AutomationError::PermissionDenied(
-                "Accessibility permissions not granted".to_string(),
-            ));
-        }
+        // Use the shared function with no prompt (since this is during operation)
+        check_accessibility_permissions(false)?;
 
         Ok(Self {
             system_wide: ThreadSafeAXUIElement::system_wide(),
@@ -2312,4 +2289,48 @@ fn element_contains_text(e: &AXUIElement, text: &str) -> bool {
     }
 
     contains_in_title || contains_in_desc
+}
+
+// Add this new function to the file (not inside any impl block)
+pub fn check_accessibility_permissions(show_prompt: bool) -> Result<bool, AutomationError> {
+    debug!("checking accessibility permissions");
+    
+    unsafe {
+        use core_foundation::dictionary::CFDictionaryRef;
+
+        #[link(name = "ApplicationServices", kind = "framework")]
+        extern "C" {
+            fn AXIsProcessTrustedWithOptions(options: CFDictionaryRef) -> bool;
+        }
+
+        // Create the dictionary with prompt option based on parameter
+        let check_attr = CFString::new("AXTrustedCheckOptionPrompt");
+        let options = CFDictionary::from_CFType_pairs(&[(
+            check_attr.as_CFType(),
+            if show_prompt {
+                CFBoolean::true_value().as_CFType()
+            } else {
+                CFBoolean::false_value().as_CFType()
+            },
+        )])
+        .as_concrete_TypeRef();
+
+        let is_trusted = AXIsProcessTrustedWithOptions(options);
+        
+        if is_trusted {
+            debug!("accessibility permissions are granted");
+            Ok(true)
+        } else {
+            // Only generate an error if we're not showing the prompt
+            if !show_prompt {
+                debug!("accessibility permissions not granted");
+                Err(AutomationError::PermissionDenied(
+                    "Accessibility permissions not granted. Go to System Preferences > Security & Privacy > Privacy > Accessibility and add this application.".to_string(),
+                ))
+            } else {
+                debug!("accessibility permissions not granted, prompt displayed");
+                Ok(false)
+            }
+        }
+    }
 }
