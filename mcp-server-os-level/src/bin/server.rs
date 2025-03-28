@@ -1779,8 +1779,23 @@ async fn list_interactable_elements_handler(
             "none"
         };
 
-        // Extract text from element
-        let text = element.text(10).unwrap_or_default();
+        // Just use the element's own text attributes
+        let attrs = element.attributes();
+        let mut text_parts = Vec::new();
+
+        // Collect from direct attributes
+        if let Some(value) = &attrs.value { 
+            if !value.is_empty() { text_parts.push(value.clone()); }
+        }
+        if let Some(label) = &attrs.label { 
+            if !label.is_empty() { text_parts.push(label.clone()); }
+        }
+        if let Some(desc) = &attrs.description { 
+            if !desc.is_empty() { text_parts.push(desc.clone()); }
+        }
+
+        // Join non-empty text parts with spaces
+        let text = text_parts.join(" ").trim().to_string();
 
         // Apply filters
         let with_text_condition = !request.with_text_only.unwrap_or(false) || !text.is_empty();
