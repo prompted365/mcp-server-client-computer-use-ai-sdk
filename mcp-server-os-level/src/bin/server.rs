@@ -272,8 +272,7 @@ pub struct ElementCacheInfo {
 // Use a tuple format for InteractableElement
 #[derive(Debug, Serialize)]
 pub struct ListInteractableElementsResponse {
-    legend: Vec<String>,
-    elements: Vec<Vec<serde_json::Value>>,
+    elements: Vec<serde_json::Value>, // Now this will contain objects instead of arrays
     stats: ElementStats,
     cache_info: ElementCacheInfo,
 }
@@ -1207,7 +1206,6 @@ async fn handle_execute_tool_function(
                         "jsonrpc": "2.0",
                         "id": id,
                         "result": {
-                            "legend": response.0.legend,
                             "elements": response.0.elements,
                             "stats": response.0.stats,
                             "cache_info": response.0.cache_info
@@ -1339,14 +1337,17 @@ async fn handle_execute_tool_function(
                 }
             };
             
-            match open_application_handler(State(state.clone()), Json(request)).await {
+            match open_application_handler(State(state), Json(request)).await {
                 Ok(response) => {
                     JsonResponse(json!({
                         "jsonrpc": "2.0",
                         "id": id,
                         "result": {
-                            "success": response.0.success,
-                            "message": response.0.message
+                            "application": {
+                                "success": response.0.application.success,
+                                "message": response.0.application.message
+                            },
+                            "elements": response.0.elements
                         }
                     }))
                 },
@@ -1659,34 +1660,6 @@ async fn list_interactable_elements_handler(
     State(state): State<Arc<AppState>>,
     Json(request): Json<ListInteractableElementsRequest>,
 ) -> Result<JsonResponse<ListInteractableElementsResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
-    // Set up the definitely and sometimes interactable role sets
-    let definitely_interactable: std::collections::HashSet<&str> = [
-        "AXButton",
-        "AXMenuItem",
-        "AXMenuBarItem",
-        "AXCheckBox",
-        "AXPopUpButton",
-        "AXTextField",
-        "AXTextArea",
-        "AXComboBox",
-        "AXLink",
-        "AXScrollBar",
-    ]
-    .iter()
-    .cloned()
-    .collect();
-
-    let sometimes_interactable: std::collections::HashSet<&str> = [
-        "AXImage",
-        "AXCell",
-        "AXSplitter",
-        "AXRow",
-        "AXStatusItem",
-    ]
-    .iter()
-    .cloned()
-    .collect();
-
     // Create desktop automation engine
     let desktop = match Desktop::new(
         request.use_background_apps.unwrap_or(false),
@@ -1744,8 +1717,7 @@ async fn list_interactable_elements_handler(
 
     info!("found {} elements in {}", elements.len(), request.app_name);
 
-    // Filter and convert elements
-    let mut result_elements = Vec::new();
+    // Create simple stats
     let mut stats = ElementStats {
         total: elements.len(),
         definitely_interactable: 0,
@@ -1754,36 +1726,19 @@ async fn list_interactable_elements_handler(
         by_role: HashMap::new(),
     };
 
-    // Create a legend for the column meanings
-    let legend = vec![
-        "index".to_string(),
-        "role".to_string(),
-        "text".to_string(),
-    ];
-
+    // Collect elements with text
+    let mut result_elements = Vec::new();
     for (i, element) in elements.iter().enumerate() {
         let role = element.role();
 
-        // Count by role
+        // Count by role for stats
         *stats.by_role.entry(role.clone()).or_insert(0) += 1;
-
-        // Determine interactability
-        let interactability = if definitely_interactable.contains(role.as_str()) {
-            stats.definitely_interactable += 1;
-            "definite"
-        } else if sometimes_interactable.contains(role.as_str()) {
-            stats.sometimes_interactable += 1;
-            "sometimes"
-        } else {
-            stats.non_interactable += 1;
-            "none"
-        };
-
-        // Just use the element's own text attributes
+        
+        // Extract text from element's attributes
         let attrs = element.attributes();
         let mut text_parts = Vec::new();
 
-        // Collect from direct attributes
+        // Collect text from direct attributes
         if let Some(value) = &attrs.value { 
             if !value.is_empty() { text_parts.push(value.clone()); }
         }
@@ -1797,38 +1752,44 @@ async fn list_interactable_elements_handler(
         // Join non-empty text parts with spaces
         let text = text_parts.join(" ").trim().to_string();
 
-        // Apply filters
-        let with_text_condition = !request.with_text_only.unwrap_or(false) || !text.is_empty();
-        let interactable_condition = !request.interactable_only.unwrap_or(false)
-            || (interactability == "definite"
-                || (request.include_sometimes_interactable.unwrap_or(false)
-                    && interactability == "sometimes"));
+        // let (x, y, width, height) = element.bounds().ok().unwrap_or((0.0, 0.0, 0.0, 0.0));
 
-        if with_text_condition && interactable_condition {
+        // result_elements.push(InteractableElement {
+        //     index: i,
+        //     role: role.clone(),
+        //     interactability: interactability.to_string(),
+        //     text,
+        //     position: Some(ElementPosition {
+        //         x: x as i32,
+        //         y: y as i32,
+        //     }),
+        //     size: Some(ElementSize {
+        //         width: width as i32,
+        //         height: height as i32,
+        //     }),
+        //     element_id: element.id(),
+        // });          
+        // Create array entry instead of struct
+        // Include all elements except AXGroup (which are rarely interactable)
+        // AXGroup might be sometimes interactable, but rarely
+        // Roles that are almost never interactable
+        
+        let non_interactable_roles = [
+            "AXGroup", "AXStaticText", "AXUnknown", "AXSeparator", 
+            "AXHeading", "AXLayoutArea", "AXHelpTag", "AXGrowArea"
+        ];
 
-            // let (x, y, width, height) = element.bounds().ok().unwrap_or((0.0, 0.0, 0.0, 0.0));
-
-            // result_elements.push(InteractableElement {
-            //     index: i,
-            //     role: role.clone(),
-            //     interactability: interactability.to_string(),
-            //     text,
-            //     position: Some(ElementPosition {
-            //         x: x as i32,
-            //         y: y as i32,
-            //     }),
-            //     size: Some(ElementSize {
-            //         width: width as i32,
-            //         height: height as i32,
-            //     }),
-            //     element_id: element.id(),
-            // });          
-              // Create array entry instead of struct
-            result_elements.push(vec![
-                json!(i),                // index 
-                json!(role.clone()),     // role
-                json!(text),             // text
-            ]);
+        // Include if:
+        // 1. The role is likely interactable (not in our non-interactable list)
+        // OR
+        // 2. The element has any text content
+        if !non_interactable_roles.contains(&role.as_str()) || !text.is_empty() {
+            // Create an object instead of an array
+            result_elements.push(json!({
+                "index": i,
+                "role": role.clone(),
+                "text": text
+            }));
         }
     }
 
@@ -1862,7 +1823,6 @@ async fn list_interactable_elements_handler(
     };
 
     Ok(JsonResponse(ListInteractableElementsResponse {
-        legend,
         elements: result_elements,
         stats,
         cache_info,
@@ -2241,10 +2201,17 @@ async fn press_key_by_index_handler(
     }
 }
 
+// First, create a new response type that combines both results
+#[derive(Serialize)]
+pub struct OpenApplicationWithElementsResponse {
+    application: OpenApplicationResponse,
+    elements: Option<ListInteractableElementsResponse>,
+}
+
 async fn open_application_handler(
-    State(_): State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Json(request): Json<OpenApplicationRequest>,
-) -> Result<JsonResponse<OpenApplicationResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
+) -> Result<JsonResponse<OpenApplicationWithElementsResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
     // Create Desktop automation instance
     let desktop = match Desktop::new(false, true) {
         Ok(desktop) => desktop,
@@ -2258,10 +2225,45 @@ async fn open_application_handler(
 
     // Open the application
     match desktop.open_application(&request.app_name) {
-        Ok(_) => Ok(JsonResponse(OpenApplicationResponse {
-            success: true,
-            message: format!("successfully opened application: {}", request.app_name),
-        })),
+        Ok(_) => {
+            // Application opened successfully
+            let app_response = OpenApplicationResponse {
+                success: true,
+                message: format!("successfully opened application: {}", request.app_name),
+            };
+            
+            // Small delay to allow application to initialize UI
+            info!("waiting for app to initialize before listing elements");
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+            
+            // Now try to list elements
+            let elements_request = ListInteractableElementsRequest {
+                app_name: request.app_name.clone(),
+                window_name: None,
+                with_text_only: Some(false),
+                interactable_only: Some(false),
+                include_sometimes_interactable: Some(true),
+                max_elements: None,
+                use_background_apps: Some(false),
+                activate_app: Some(true),
+            };
+            
+            // Call the list elements handler
+            let elements_response = match list_interactable_elements_handler(State(state), Json(elements_request)).await {
+                Ok(response) => Some(response.0),
+                Err(e) => {
+                    // Log the error but don't fail the whole request
+                    error!("failed to list elements after opening app: {:?}", e);
+                    None
+                }
+            };
+            
+            // Return combined response
+            Ok(JsonResponse(OpenApplicationWithElementsResponse {
+                application: app_response,
+                elements: elements_response,
+            }))
+        },
         Err(err) => Err((
             StatusCode::BAD_REQUEST,
             JsonResponse(json!({"error": format!("failed to open application: {}", err)})),
