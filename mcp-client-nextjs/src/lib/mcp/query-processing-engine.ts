@@ -121,11 +121,31 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
     
     // If tools were used, add results to history and continue loop
     if (hasToolCalls) {
+      // First, check for any previous tool results in history and replace them with minimal placeholders
+      for (let i = 0; i < conversationHistory.length; i++) {
+        const msg = conversationHistory[i];
+        if (msg.role === "user" && Array.isArray(msg.content) && msg.content.length > 0 
+            && typeof msg.content[0] === "object" && msg.content[0].type === "tool_result") {
+          // Replace with minimal placeholder that preserves structure but reduces token usage
+          // We must keep the tool_use_id to maintain the pairing with previous tool calls
+          conversationHistory[i] = {
+            role: "user" as const,
+            content: msg.content.map(item => ({
+              type: "tool_result",
+              tool_use_id: item.tool_use_id,
+              content: "[Previous tool result removed]" // Minimal placeholder
+            }))
+          };
+          log.info("replaced previous tool result with minimal placeholder");
+        }
+      }
+      
+      // Now add the current tool results to history
       conversationHistory.push({
         role: "user" as const,
         content: toolResultContent
       });
-      log.info("added tool results, continuing agent loop");
+      log.info("added new tool results to conversation history");
     } else {
       // No tools used, we're done
       isProcessing = false;
