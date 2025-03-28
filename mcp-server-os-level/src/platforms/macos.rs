@@ -2296,39 +2296,45 @@ pub fn check_accessibility_permissions(show_prompt: bool) -> Result<bool, Automa
     debug!("checking accessibility permissions");
     
     unsafe {
-        use core_foundation::dictionary::CFDictionaryRef;
+        use core_foundation::dictionary::CFDictionary;
+        use core_foundation::string::CFString;
+        use core_foundation::boolean::CFBoolean;
+        use core_foundation::base::TCFType;
 
+        // Create the options dictionary more safely
+        let key = CFString::new("AXTrustedCheckOptionPrompt");
+        let value = if show_prompt {
+            CFBoolean::true_value()
+        } else {
+            CFBoolean::false_value()
+        };
+        
+        // Create dictionary with proper memory management
+        let options = CFDictionary::from_CFType_pairs(&[(
+            key.as_CFType(),
+            value.as_CFType(),
+        )]);
+
+        // Link to the AXIsProcessTrustedWithOptions function
         #[link(name = "ApplicationServices", kind = "framework")]
         extern "C" {
-            fn AXIsProcessTrustedWithOptions(options: CFDictionaryRef) -> bool;
+            fn AXIsProcessTrustedWithOptions(options: core_foundation::dictionary::CFDictionaryRef) -> bool;
         }
 
-        // Create the dictionary with prompt option based on parameter
-        let check_attr = CFString::new("AXTrustedCheckOptionPrompt");
-        let options = CFDictionary::from_CFType_pairs(&[(
-            check_attr.as_CFType(),
-            if show_prompt {
-                CFBoolean::true_value().as_CFType()
-            } else {
-                CFBoolean::false_value().as_CFType()
-            },
-        )])
-        .as_concrete_TypeRef();
-
-        let is_trusted = AXIsProcessTrustedWithOptions(options);
+        // Call the function with proper type conversion
+        let is_trusted = AXIsProcessTrustedWithOptions(options.as_concrete_TypeRef());
         
         if is_trusted {
             debug!("accessibility permissions are granted");
             Ok(true)
         } else {
-            // Only generate an error if we're not showing the prompt
             if !show_prompt {
                 debug!("accessibility permissions not granted");
                 Err(AutomationError::PermissionDenied(
                     "Accessibility permissions not granted. Go to System Preferences > Security & Privacy > Privacy > Accessibility and add this application.".to_string(),
                 ))
             } else {
-                debug!("accessibility permissions not prompted, prompt displayed");
+                debug!("accessibility permissions prompt displayed");
                 Ok(false)
             }
         }
