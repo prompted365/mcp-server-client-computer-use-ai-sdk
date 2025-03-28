@@ -269,9 +269,11 @@ pub struct ElementCacheInfo {
     ttl_seconds: u64,
 }
 
+// Use a tuple format for InteractableElement
 #[derive(Debug, Serialize)]
 pub struct ListInteractableElementsResponse {
-    elements: Vec<InteractableElement>,
+    legend: Vec<String>,
+    elements: Vec<Vec<serde_json::Value>>,
     stats: ElementStats,
     cache_info: ElementCacheInfo,
 }
@@ -1205,6 +1207,7 @@ async fn handle_execute_tool_function(
                         "jsonrpc": "2.0",
                         "id": id,
                         "result": {
+                            "legend": response.0.legend,
                             "elements": response.0.elements,
                             "stats": response.0.stats,
                             "cache_info": response.0.cache_info
@@ -1751,6 +1754,13 @@ async fn list_interactable_elements_handler(
         by_role: HashMap::new(),
     };
 
+    // Create a legend for the column meanings
+    let legend = vec![
+        "index".to_string(),
+        "role".to_string(),
+        "text".to_string(),
+    ];
+
     for (i, element) in elements.iter().enumerate() {
         let role = element.role();
 
@@ -1780,23 +1790,30 @@ async fn list_interactable_elements_handler(
                     && interactability == "sometimes"));
 
         if with_text_condition && interactable_condition {
-            let (x, y, width, height) = element.bounds().ok().unwrap_or((0.0, 0.0, 0.0, 0.0));
 
-            result_elements.push(InteractableElement {
-                index: i,
-                role: role.clone(),
-                interactability: interactability.to_string(),
-                text,
-                position: Some(ElementPosition {
-                    x: x as i32,
-                    y: y as i32,
-                }),
-                size: Some(ElementSize {
-                    width: width as i32,
-                    height: height as i32,
-                }),
-                element_id: element.id(),
-            });
+            // let (x, y, width, height) = element.bounds().ok().unwrap_or((0.0, 0.0, 0.0, 0.0));
+
+            // result_elements.push(InteractableElement {
+            //     index: i,
+            //     role: role.clone(),
+            //     interactability: interactability.to_string(),
+            //     text,
+            //     position: Some(ElementPosition {
+            //         x: x as i32,
+            //         y: y as i32,
+            //     }),
+            //     size: Some(ElementSize {
+            //         width: width as i32,
+            //         height: height as i32,
+            //     }),
+            //     element_id: element.id(),
+            // });          
+              // Create array entry instead of struct
+            result_elements.push(vec![
+                json!(i),                // index 
+                json!(role.clone()),     // role
+                json!(text),             // text
+            ]);
         }
     }
 
@@ -1830,6 +1847,7 @@ async fn list_interactable_elements_handler(
     };
 
     Ok(JsonResponse(ListInteractableElementsResponse {
+        legend,
         elements: result_elements,
         stats,
         cache_info,

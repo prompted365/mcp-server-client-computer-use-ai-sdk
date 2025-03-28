@@ -378,6 +378,7 @@ impl MacOSEngine {
         // Use the scroll_at_position method with the current coordinates
         self.scroll_at_position(current_pos.x, current_pos.y, direction, amount)
     }
+
 }
 
 // Helper function to get PID from an AXUIElement
@@ -572,14 +573,18 @@ impl AccessibilityEngine for MacOSEngine {
             apps.len()
         );
 
+        // Optimization: Convert target name to lowercase once, outside the loop
+        let name_lowercase = name.to_lowercase();
+
         // Look for an application with a matching name
         for app in apps {
             let app_name = app.attributes().label.unwrap_or_default();
-            debug!("Checking application: '{}'", app_name);
+            // debug!("Checking application: '{}'", app_name);
+            // std::thread::sleep(std::time::Duration::from_millis(1));
 
-            // Case-insensitive comparison since macOS app names might have different casing
-            if app_name.to_lowercase() == name.to_lowercase() {
-                debug!("Found matching application: '{}'", app_name);
+            // Case-insensitive comparison with pre-computed lowercase name
+            if app_name.to_lowercase() == name_lowercase {
+                debug!("found matching application: '{}'", app_name);
                 return Ok(app);
             }
         }
@@ -1910,7 +1915,7 @@ impl UIElementImpl for MacOSUIElement {
     }
 
     fn get_text(&self, max_depth: usize) -> Result<String, AutomationError> {
-        debug!("collecting all text with max_depth={}", max_depth);
+        // debug!("collecting all text with max_depth={}", max_depth);
 
         // Create a collector that matches ALL elements (predicate always returns true)
         // This will collect every accessible element in the tree
@@ -1919,7 +1924,7 @@ impl UIElementImpl for MacOSUIElement {
 
         // Get all elements
         let elements = collector.find_all();
-        debug!("collected {} elements for text extraction", elements.len());
+        // debug!("collected {} elements for text extraction", elements.len());
 
         // Extract text from all collected elements
         let mut all_text: Vec<String> = Vec::new();
@@ -2207,7 +2212,7 @@ fn parse_ax_attribute_value(
 
         // For array types (children)
         name if name.starts_with("AXChildren") => {
-            debug!("Processing AXChildren attribute");
+            // debug!("Processing AXChildren attribute");
 
             unsafe {
                 let value_ref = value.as_CFTypeRef();
@@ -2217,7 +2222,7 @@ fn parse_ax_attribute_value(
                     // Cast to CFArrayRef
                     let array_ref = value_ref as *const __CFArray;
                     let count = CFArrayGetCount(array_ref);
-                    debug!("AXChildren array with {} elements", count);
+                    // debug!("AXChildren array with {} elements", count);
 
                     // Create an array of element addresses
                     let mut items = Vec::with_capacity(count as usize);
