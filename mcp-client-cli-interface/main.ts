@@ -44,8 +44,8 @@ function showInitialOptions(rl: readline.Interface) {
       name: 'option',
       message: 'choose an option:',
       choices: [
-        { name: "1. list discord elements, type 'test', press return", value: 1 },
-        { name: "2. send 'hello world' message to partiful", value: 2 },
+        { name: "1. go to discord then call listInteractableElementsByIndex, then typebyindex word test,  and then call pressbyindex with return key", value: 1 },
+        { name: "2. send hello world message to partiful in messages app", value: 2 },
         { name: "3. custom query (type your own)", value: 3 }
       ]
     }
