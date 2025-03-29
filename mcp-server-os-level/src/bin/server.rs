@@ -231,10 +231,6 @@ pub struct OpenUrlResponse {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ListInteractableElementsRequest {
     app_name: String,
-    window_name: Option<String>,
-    with_text_only: Option<bool>,
-    interactable_only: Option<bool>,
-    include_sometimes_interactable: Option<bool>,
     max_elements: Option<usize>,
     use_background_apps: Option<bool>,
     activate_app: Option<bool>,
@@ -287,6 +283,7 @@ pub struct ClickByIndexRequest {
 pub struct ClickByIndexResponse {
     success: bool,
     message: String,
+    elements: Option<ListInteractableElementsResponse>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -331,6 +328,13 @@ enum InputAction {
 #[derive(Serialize)]
 struct InputControlResponse {
     success: bool,
+}
+
+// Add this new response type for input control with elements
+#[derive(Serialize)]
+pub struct InputControlWithElementsResponse {
+    input: InputControlResponse,
+    elements: Option<ListInteractableElementsResponse>,
 }
 
 // ================ Handlers ================
@@ -795,10 +799,6 @@ fn handle_initialize(id: Value) -> JsonResponse<Value> {
         "type": "object",
         "properties": {
             "app_name": {"type": "string"},
-            "window_name": {"type": "string"},
-            "with_text_only": {"type": "boolean"},
-            "interactable_only": {"type": "boolean"},
-            "include_sometimes_interactable": {"type": "boolean"},
             "max_elements": {"type": "integer"},
             "use_background_apps": {"type": "boolean"},
             "activate_app": {"type": "boolean"}
@@ -906,39 +906,42 @@ fn handle_initialize(id: Value) -> JsonResponse<Value> {
             parameters: scroll_element_schema,
         },
         */
+        // Remove the listInteractableElementsByIndex tool function since it's used internally
+        /*
         ToolFunctionDefinition {
             name: "listInteractableElementsByIndex".to_string(),
             description: "list all interactable elements in an application and cache them for subsequent by-index operations. MUST BE CALLED FIRST before using any clickByIndex, typeByIndex, or pressKeyByIndex functions".to_string(),
             parameters: list_interactable_elements_schema,
         },
+        */
         ToolFunctionDefinition {
             name: "clickByIndex".to_string(),
-            description: "click on a ui element by its index. REQUIRES listInteractableElementsByIndex to be called first to obtain valid indices".to_string(),
+            description: "click on a ui element by its index and returns the updated element list".to_string(),
             parameters: click_by_index_schema,
         },
         ToolFunctionDefinition {
             name: "typeByIndex".to_string(),
-            description: "type text into a ui element by its index. REQUIRES listInteractableElementsByIndex to be called first to obtain valid indices".to_string(),
+            description: "type text into a ui element by its index and returns the updated element list".to_string(),
             parameters: type_by_index_schema,
         },
         ToolFunctionDefinition {
             name: "pressKeyByIndex".to_string(),
-            description: "press key combination on a ui element by its index. REQUIRES listInteractableElementsByIndex to be called first to obtain valid indices".to_string(),
+            description: "press key combination on a ui element by its index and returns the updated element list".to_string(),
             parameters: press_key_by_index_schema,
         },
         ToolFunctionDefinition {
             name: "openApplication".to_string(),
-            description: "open an application".to_string(),
+            description: "open an application and return the list of interactable elements in the app".to_string(),
             parameters: open_application_schema,
         },
         ToolFunctionDefinition {
             name: "openUrl".to_string(),
-            description: "open a url in a browser".to_string(),
+            description: "open a url in a browser and return the list of interactable elements in the browser".to_string(),
             parameters: open_url_schema,
         },
         ToolFunctionDefinition {
             name: "inputControl".to_string(),
-            description: "perform direct input control actions".to_string(),
+            description: "perform direct input control actions and return the list of interactable elements from the current app".to_string(),
             parameters: input_control_schema,
         },
     ];
@@ -1241,8 +1244,11 @@ async fn handle_execute_tool_function(
                         "jsonrpc": "2.0",
                         "id": id,
                         "result": {
-                            "success": response.0.success,
-                            "message": response.0.message
+                            "click": {
+                                "success": response.0.click.success,
+                                "message": response.0.click.message
+                            },
+                            "elements": response.0.elements
                         }
                     }))
                 },
@@ -1275,8 +1281,11 @@ async fn handle_execute_tool_function(
                         "jsonrpc": "2.0",
                         "id": id,
                         "result": {
-                            "success": response.0.success,
-                            "message": response.0.message
+                            "type_action": {
+                                "success": response.0.type_action.success,
+                                "message": response.0.type_action.message
+                            },
+                            "elements": response.0.elements
                         }
                     }))
                 },
@@ -1309,8 +1318,11 @@ async fn handle_execute_tool_function(
                         "jsonrpc": "2.0",
                         "id": id,
                         "result": {
-                            "success": response.0.success,
-                            "message": response.0.message
+                            "press_key": {
+                                "success": response.0.press_key.success,
+                                "message": response.0.press_key.message
+                            },
+                            "elements": response.0.elements
                         }
                     }))
                 },
@@ -1380,8 +1392,11 @@ async fn handle_execute_tool_function(
                         "jsonrpc": "2.0",
                         "id": id,
                         "result": {
-                            "success": response.0.success,
-                            "message": response.0.message
+                            "url": {
+                                "success": response.0.url.success,
+                                "message": response.0.url.message
+                            },
+                            "elements": response.0.elements
                         }
                     }))
                 },
@@ -1414,7 +1429,10 @@ async fn handle_execute_tool_function(
                         "jsonrpc": "2.0",
                         "id": id,
                         "result": {
-                            "success": response.0.success
+                            "input": {
+                                "success": response.0.input.success
+                            },
+                            "elements": response.0.elements
                         }
                     }))
                 },
@@ -1829,10 +1847,17 @@ async fn list_interactable_elements_handler(
     }))
 }
 
+// Create a new response type that combines both results
+#[derive(Serialize)]
+pub struct ClickByIndexWithElementsResponse {
+    click: ClickByIndexResponse,
+    elements: Option<ListInteractableElementsResponse>,
+}
+
 async fn click_by_index_handler(
     State(state): State<Arc<AppState>>,
     Json(request): Json<ClickByIndexRequest>,
-) -> Result<JsonResponse<ClickByIndexResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
+) -> Result<JsonResponse<ClickByIndexWithElementsResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
     // Get elements from cache
     let elements_opt = {
         let cache = state.element_cache.lock().await;
@@ -1850,19 +1875,31 @@ async fn click_by_index_handler(
     }
 
     match elements_opt {
-        Some((elements, timestamp, _app_name)) if timestamp.elapsed() < std::time::Duration::from_secs(30) => {
+        Some((elements, timestamp, app_name)) if timestamp.elapsed() < std::time::Duration::from_secs(30) => {
             // Use element_index directly
             if request.element_index < elements.len() {
                 let element = &elements[request.element_index];
 
                 match element.click() {
-                    Ok(_) => Ok(JsonResponse(ClickByIndexResponse {
-                        success: true,
-                        message: format!(
-                            "successfully clicked element with role: {}",
-                            element.role()
-                        ),
-                    })),
+                    Ok(_) => {
+                        let click_response = ClickByIndexResponse {
+                            success: true,
+                            message: format!(
+                                "successfully clicked element with role: {}",
+                                element.role()
+                            ),
+                            elements: None,  // add the missing field
+                        };
+                        
+                        // Get refreshed elements using the helper function
+                        let elements_response = refresh_elements_after_action(state, app_name.clone(), 500).await;
+                        
+                        // Return combined response
+                        Ok(JsonResponse(ClickByIndexWithElementsResponse {
+                            click: click_response,
+                            elements: elements_response,
+                        }))
+                    },
                     Err(e) => {
                         error!("failed to click element: {}", e);
                         Err((
@@ -1909,10 +1946,17 @@ async fn click_by_index_handler(
     }
 }
 
+// Create a new response type that combines both results
+#[derive(Serialize)]
+pub struct TypeByIndexWithElementsResponse {
+    type_action: TypeByIndexResponse,
+    elements: Option<ListInteractableElementsResponse>,
+}
+
 async fn type_by_index_handler(
     State(state): State<Arc<AppState>>,
     Json(request): Json<TypeByIndexRequest>,
-) -> Result<JsonResponse<TypeByIndexResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
+) -> Result<JsonResponse<TypeByIndexWithElementsResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
     // Get elements from cache
     let elements_opt = {
         let cache = state.element_cache.lock().await;
@@ -2013,12 +2057,21 @@ async fn type_by_index_handler(
                                 Ok(_) => {
                                     debug!("successfully typed text '{}' using inputControl", request.text);
                                     
-                                    Ok(JsonResponse(TypeByIndexResponse {
+                                    let type_response = TypeByIndexResponse {
                                         success: true,
                                         message: format!(
                                             "successfully typed text into element with role: {} (using AppleScript fallback)",
                                             element.role()
                                         ),
+                                    };
+                                    
+                                    // Get refreshed elements using the helper function
+                                    let elements_response = refresh_elements_after_action(state, app_name.clone(), 500).await;
+                                    
+                                    // Return combined response
+                                    Ok(JsonResponse(TypeByIndexWithElementsResponse {
+                                        type_action: type_response,
+                                        elements: elements_response,
                                     }))
                                 },
                                 Err(e) => {
@@ -2033,12 +2086,21 @@ async fn type_by_index_handler(
                             }
                         } else {
                             // Standard approach worked
-                            Ok(JsonResponse(TypeByIndexResponse {
+                            let type_response = TypeByIndexResponse {
                                 success: true,
                                 message: format!(
                                     "successfully typed text into element with role: {}",
                                     element.role()
                                 ),
+                            };
+                            
+                            // Get refreshed elements using the helper function
+                            let elements_response = refresh_elements_after_action(state, app_name.clone(), 500).await;
+                            
+                            // Return combined response
+                            Ok(JsonResponse(TypeByIndexWithElementsResponse {
+                                type_action: type_response,
+                                elements: elements_response,
                             }))
                         }
                     },
@@ -2088,10 +2150,17 @@ async fn type_by_index_handler(
     }
 }
 
+// Add this new response type before the handler
+#[derive(Debug, Serialize)]
+pub struct PressKeyByIndexWithElementsResponse {
+    press_key: PressKeyByIndexResponse,
+    elements: Option<ListInteractableElementsResponse>,
+}
+
 async fn press_key_by_index_handler(
     State(state): State<Arc<AppState>>,
     Json(request): Json<PressKeyByIndexRequest>,
-) -> Result<JsonResponse<PressKeyByIndexResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
+) -> Result<JsonResponse<PressKeyByIndexWithElementsResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
     debug!("pressing key combination by index: element_index={}, key_combo={}", 
         request.element_index, request.key_combo);
 
@@ -2147,14 +2216,25 @@ async fn press_key_by_index_handler(
                 let element = &elements[request.element_index];
 
                 match element.press_key(&request.key_combo) {
-                    Ok(_) => Ok(JsonResponse(PressKeyByIndexResponse {
-                        success: true,
-                        message: format!(
-                            "successfully pressed key combination '{}' on element with role: {}",
-                            request.key_combo,
-                            element.role()
-                        ),
-                    })),
+                    Ok(_) => {
+                        let press_key_response = PressKeyByIndexResponse {
+                            success: true,
+                            message: format!(
+                                "successfully pressed key combination '{}' on element with role: {}",
+                                request.key_combo,
+                                element.role()
+                            ),
+                        };
+                        
+                        // Get refreshed elements using the helper function
+                        let elements_response = refresh_elements_after_action(state, app_name.clone(), 500).await;
+                        
+                        // Return combined response
+                        Ok(JsonResponse(PressKeyByIndexWithElementsResponse {
+                            press_key: press_key_response,
+                            elements: elements_response,
+                        }))
+                    },
                     Err(e) => {
                         error!("failed to press key on element: {}", e);
                         Err((
@@ -2232,31 +2312,8 @@ async fn open_application_handler(
                 message: format!("successfully opened application: {}", request.app_name),
             };
             
-            // Small delay to allow application to initialize UI
-            info!("waiting for app to initialize before listing elements");
-            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-            
-            // Now try to list elements
-            let elements_request = ListInteractableElementsRequest {
-                app_name: request.app_name.clone(),
-                window_name: None,
-                with_text_only: Some(false),
-                interactable_only: Some(false),
-                include_sometimes_interactable: Some(true),
-                max_elements: None,
-                use_background_apps: Some(false),
-                activate_app: Some(true),
-            };
-            
-            // Call the list elements handler
-            let elements_response = match list_interactable_elements_handler(State(state), Json(elements_request)).await {
-                Ok(response) => Some(response.0),
-                Err(e) => {
-                    // Log the error but don't fail the whole request
-                    error!("failed to list elements after opening app: {:?}", e);
-                    None
-                }
-            };
+            // Get refreshed elements using the helper function - use a longer delay for app startup
+            let elements_response = refresh_elements_after_action(state, request.app_name.clone(), 1000).await;
             
             // Return combined response
             Ok(JsonResponse(OpenApplicationWithElementsResponse {
@@ -2271,10 +2328,17 @@ async fn open_application_handler(
     }
 }
 
+// First, create a new response type that combines both results
+#[derive(Serialize)]
+pub struct OpenUrlWithElementsResponse {
+    url: OpenUrlResponse,
+    elements: Option<ListInteractableElementsResponse>,
+}
+
 async fn open_url_handler(
-    State(_): State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Json(request): Json<OpenUrlRequest>,
-) -> Result<JsonResponse<OpenUrlResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
+) -> Result<JsonResponse<OpenUrlWithElementsResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
     // Create Desktop automation instance
     let desktop = match Desktop::new(false, true) {
         Ok(desktop) => desktop,
@@ -2287,12 +2351,26 @@ async fn open_url_handler(
     };
 
     // Open the URL
+    let browser_name = request.browser.clone().unwrap_or_else(|| "Safari".to_string());
     let browser_ref = request.browser.as_deref();
+    
     match desktop.open_url(&request.url, browser_ref) {
-        Ok(_) => Ok(JsonResponse(OpenUrlResponse {
-            success: true,
-            message: format!("successfully opened URL: {}", request.url),
-        })),
+        Ok(_) => {
+            // URL opened successfully
+            let url_response = OpenUrlResponse {
+                success: true,
+                message: format!("successfully opened URL: {}", request.url),
+            };
+            
+            // Get refreshed elements using the helper function - use a longer delay for page loading
+            let elements_response = refresh_elements_after_action(state, browser_name, 2000).await;
+            
+            // Return combined response
+            Ok(JsonResponse(OpenUrlWithElementsResponse {
+                url: url_response,
+                elements: elements_response,
+            }))
+        },
         Err(err) => Err((
             StatusCode::BAD_REQUEST,
             JsonResponse(json!({"error": format!("failed to open URL: {}", err)})),
@@ -2302,9 +2380,9 @@ async fn open_url_handler(
 
 // Define the handler for input control
 async fn input_control_handler(
-    State(_): State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Json(payload): Json<InputControlRequest>,
-) -> Result<JsonResponse<InputControlResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
+) -> Result<JsonResponse<InputControlWithElementsResponse>, (StatusCode, JsonResponse<serde_json::Value>)> {
     use std::process::Command;
 
     info!("input control handler {:?}", payload);
@@ -2365,7 +2443,57 @@ async fn input_control_handler(
         }
     }
 
-    Ok(JsonResponse(InputControlResponse { success: true }))
+    // Get elements from cache to find the active application
+    let elements_response = {
+        let cache = state.element_cache.lock().await;
+        match &*cache {
+            Some((_, _, cached_app_name)) => {
+                // We have a cached app name, so let's refresh elements
+                info!("refreshing elements for app: {}", cached_app_name);
+                refresh_elements_after_action(state.clone(), cached_app_name.clone(), 500).await
+            }
+            None => {
+                // No cache available, don't try to refresh elements
+                info!("no element cache found, skipping element refresh");
+                None
+            }
+        }
+    };
+    
+    // Return combined response
+    Ok(JsonResponse(InputControlWithElementsResponse {
+        input: InputControlResponse { success: true },
+        elements: elements_response,
+    }))
+}
+
+// Add this helper function after all the handler functions but before main()
+async fn refresh_elements_after_action(
+    state: Arc<AppState>, 
+    app_name: String,
+    delay_ms: u64
+) -> Option<ListInteractableElementsResponse> {
+    // Small delay to allow UI to update after action
+    info!("waiting for UI to update after action before listing elements");
+    tokio::time::sleep(tokio::time::Duration::from_millis(delay_ms)).await;
+    
+    // Create request to refresh the elements list
+    let elements_request = ListInteractableElementsRequest {
+        app_name,
+        max_elements: None,
+        use_background_apps: Some(false),
+        activate_app: Some(true),
+    };
+    
+    // Call the list elements handler
+    match list_interactable_elements_handler(State(state), Json(elements_request)).await {
+        Ok(response) => Some(response.0),
+        Err(e) => {
+            // Log the error but don't fail the whole request
+            error!("failed to list elements after action: {:?}", e);
+            None
+        }
+    }
 }
 
 // ================ Main ================
@@ -2402,7 +2530,8 @@ async fn main() -> anyhow::Result<()> {
         // New routes matching screenPipe
         // .route("/api/press-key", post(press_key_handler))
         // .route("/api/scroll", post(scroll_element_handler))
-        .route("/api/list-interactable-elements", post(list_interactable_elements_handler))
+        // Remove the list-interactable-elements endpoint since it's used internally
+        // .route("/api/list-interactable-elements", post(list_interactable_elements_handler))
         .route("/api/click-by-index", post(click_by_index_handler))
         .route("/api/type-by-index", post(type_by_index_handler))
         .route("/api/press-key-by-index", post(press_key_by_index_handler))
