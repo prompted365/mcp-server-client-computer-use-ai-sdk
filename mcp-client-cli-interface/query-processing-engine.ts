@@ -206,7 +206,6 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
               content: "[Previous tool result removed]" // Minimal placeholder
             }))
           };
-          log.info("replaced previous tool result with minimal placeholder");
         }
       }
       
