@@ -38,36 +38,29 @@ async function main() {
 function showInitialOptions(rl: readline.Interface) {
   console.log("\nselect how to start:");
   
+  const choices = [
+    "type your own",
+    "send message to first dialogie in messages app. message is 'i'm testing computer-use-sdk'",
+    "go to discord, click 'direct messages' dialogue, then send message 'i'm testing computer-use-sdk'"
+  ];
+  
   inquirer.prompt([
     {
       type: 'list',
       name: 'option',
       message: 'choose an option:',
-      choices: [
-        { name: "1. go to discord then call listInteractableElementsByIndex, open any dm dialogue, then typebyindex word test,  and then call pressbyindex with return key", value: 1 },
-        { name: "2. send hello world message to partiful in messages app", value: 2 },
-        { name: "3. custom query (type your own)", value: 3 }
-      ]
+      choices: choices
     }
   ]).then(answers => {
     log.debug(`selected option: ${answers.option}`);
-    let input = "";
     
-    switch(answers.option) {
-      case 1:
-        input = predefinedPrompts[0];
-        log.highlight(`using predefined prompt: "${input}"`);
-        processQuery(input, rl);
-        break;
-      case 2:
-        input = predefinedPrompts[1];
-        log.highlight(`using predefined prompt: "${input}"`);
-        processQuery(input, rl);
-        break;
-      case 3:
-        // Ask for custom input
-        askQuestion(rl);
-        break;
+    if (answers.option === "type your own") {
+      // Ask for custom input
+      askQuestion(rl);
+    } else {
+      // Use the selected option directly as the prompt
+      log.highlight(`using prompt: "${answers.option}"`);
+      processQuery(answers.option, rl);
     }
   });
 }
