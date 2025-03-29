@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc, time::Instant};
 use computer_use_ai_sdk::UIElement;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 // ================ Types ================
 
@@ -353,4 +353,42 @@ pub struct OpenApplicationWithElementsResponse {
 pub struct OpenUrlWithElementsResponse {
     pub url: OpenUrlResponse,
     pub elements: Option<ListInteractableElementsResponse>,
+}
+
+// Re-export types from list_elements_and_attributes.rs
+// This is only needed if we want to use these types elsewhere
+#[derive(serde::Deserialize)]
+pub struct ListElementAttributesRequest {
+    pub app_name: String,
+    pub max_elements: Option<usize>,
+    pub max_depth: Option<usize>,
+    pub use_background_apps: Option<bool>,
+    pub activate_app: Option<bool>,
+    pub full_tree: Option<bool>,
+}
+
+#[derive(serde::Serialize)]
+pub struct ListElementAttributesResponse {
+    pub elements: Vec<ElementAttributesInfo>,
+    pub stats: ElementStatsExtended,
+    pub cache_info: ElementCacheInfo,
+}
+
+#[derive(serde::Serialize)]
+pub struct ElementAttributesInfo {
+    pub index: usize,
+    pub role: String,
+    pub attributes: HashMap<String, Value>,
+    pub bounds: Option<(f64, f64, f64, f64)>,
+    pub depth: usize,
+    pub parent_index: Option<usize>,
+    pub children_indices: Vec<usize>,
+}
+
+#[derive(serde::Serialize)]
+pub struct ElementStatsExtended {
+    pub total: usize,
+    pub by_role: HashMap<String, usize>,
+    pub by_attribute: HashMap<String, usize>,
+    pub max_depth: usize,
 }

@@ -9,5 +9,6 @@ pub mod open_application;
 pub mod open_url;
 pub mod input_control;
 pub mod utils;
+pub mod list_elements_and_attributes;
 
 // No re-exports since they're not being used
