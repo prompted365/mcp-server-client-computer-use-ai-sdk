@@ -6,7 +6,7 @@ use axum::{
 };
 use serde::Serialize;
 use serde_json::json;
-use tracing::{debug, error, info};
+use tracing::error;
 
 use crate::types::{AppState, ClickByIndexRequest, ClickByIndexResponse, ListInteractableElementsResponse};
 use crate::refresh_elements_after_action;

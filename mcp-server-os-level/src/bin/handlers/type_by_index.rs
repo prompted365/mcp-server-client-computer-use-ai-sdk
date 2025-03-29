@@ -6,7 +6,7 @@ use axum::{
 };
 use serde::Serialize;
 use serde_json::json;
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 use computer_use_ai_sdk::Desktop;
 
 use crate::types::{AppState, TypeByIndexRequest, TypeByIndexResponse, ListInteractableElementsResponse};
