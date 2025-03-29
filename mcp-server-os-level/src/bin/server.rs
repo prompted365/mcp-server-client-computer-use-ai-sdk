@@ -795,16 +795,16 @@ fn handle_initialize(id: Value) -> JsonResponse<Value> {
     //     "required": ["selector", "direction", "amount"]
     // });
     
-    let list_interactable_elements_schema = json!({
-        "type": "object",
-        "properties": {
-            "app_name": {"type": "string"},
-            "max_elements": {"type": "integer"},
-            "use_background_apps": {"type": "boolean"},
-            "activate_app": {"type": "boolean"}
-        },
-        "required": ["app_name"]
-    });
+    // let list_interactable_elements_schema = json!({
+    //     "type": "object",
+    //     "properties": {
+    //         "app_name": {"type": "string"},
+    //         "max_elements": {"type": "integer"},
+    //         "use_background_apps": {"type": "boolean"},
+    //         "activate_app": {"type": "boolean"}
+    //     },
+    //     "required": ["app_name"]
+    // });
     
     let click_by_index_schema = json!({
         "type": "object",
