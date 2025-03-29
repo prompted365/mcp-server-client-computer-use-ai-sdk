@@ -170,6 +170,7 @@ pub async fn list_interactable_elements_handler(
     }))
 }
 
+#[allow(dead_code)]
 pub async fn refresh_elements_after_action(
     state: Arc<AppState>,
     app_name: String,

@@ -1,19 +1,12 @@
-use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Instant};
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
-    extract::{Json, State},
-    http::StatusCode,
-    response::Json as JsonResponse,
     routing::post,
     Router,
 };
-use computer_use_ai_sdk::Desktop;
-use serde::Serialize;
 use tokio::sync::Mutex;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use tracing::{debug, error, info, level_filters::LevelFilter};
-use uuid::Uuid;
-use serde_json::{json, Value};
+use tracing::{error, info, level_filters::LevelFilter};
 mod types;
 use types::*;
 mod handlers;

@@ -14,7 +14,7 @@ use crate::types::{AppState, ExecuteToolFunctionParams, GetTextRequest,
 
 // Keep the handler function imports
 use crate::handlers::get_text::get_text_handler;
-use crate::handlers::list_elements::{list_interactable_elements_handler, refresh_elements_after_action};
+use crate::handlers::list_elements::list_interactable_elements_handler;
 use crate::handlers::click_by_index::click_by_index_handler;
 use crate::handlers::type_by_index::type_by_index_handler;
 use crate::handlers::press_key_by_index::press_key_by_index_handler;
