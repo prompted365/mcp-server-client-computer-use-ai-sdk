@@ -39,7 +39,7 @@ function showInitialOptions(rl: readline.Interface) {
   console.log("\nselect how to start:");
   
   const choices = [
-    "type your own",
+    "[type your own]",
     "send message to first dialogie in messages app. message is 'i'm testing computer-use-sdk'",
     "go to discord, click 'direct messages' dialogue, then send message 'i'm testing computer-use-sdk'"
   ];
@@ -54,7 +54,7 @@ function showInitialOptions(rl: readline.Interface) {
   ]).then(answers => {
     log.debug(`selected option: ${answers.option}`);
     
-    if (answers.option === "type your own") {
+    if (answers.option === "[type your own]") {
       // Ask for custom input
       askQuestion(rl);
     } else {
