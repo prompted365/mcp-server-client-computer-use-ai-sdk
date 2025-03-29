@@ -1,6 +1,5 @@
 import { desktopClient, log } from './start-here';
 import Anthropic from "@anthropic-ai/sdk";
-import type { Message } from "@anthropic-ai/sdk/resources/messages";
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -99,6 +98,12 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
     content: query 
   });
   
+  // Add system instruction at the beginning of the conversation
+  conversationHistory.push({ 
+    role: "assistant" as const, 
+    content: `i'll help you with: "${query}". i'll break this down into steps and use tools as needed.` 
+  });
+  
   // Implement proper agent loop
   let isProcessing = true;
   let finalResponse = "";
@@ -148,6 +153,8 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
     let toolResultContent: Array<{
       type: string;
       tool_use_id: string;
+      tool_name: string;
+      tool_args: string;
       content: string;
       is_error?: boolean;
     }> = [];
@@ -165,25 +172,38 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
         try {
           const result = await desktopClient.callTool(toolName, toolArgs as Record<string, any>);
           
-          // Format tool result for conversation history
-          // Convert object results to strings to match Anthropic's API requirements
-          const resultContent = typeof result === 'object' ? 
-            JSON.stringify(result) : 
-            String(result);
-          
-          toolResultContent.push({
-            type: "tool_result",
-            tool_use_id: content.id,
-            content: resultContent
+          // Create structured content that includes all the info we want
+          const formattedContent = JSON.stringify({
+            result: result,
+            metadata: {
+              tool_name: toolName,
+              tool_args: toolArgs,
+              is_error: false
+            }
           });
           
-        } catch (error) {
-          // Add error result as string
           toolResultContent.push({
             type: "tool_result",
             tool_use_id: content.id,
-            content: `Error: ${error}`,
-            is_error: true
+            content: formattedContent
+          });
+          
+          
+        } catch (error) {
+          // Error case - still include all metadata
+          const formattedContent = JSON.stringify({
+            result: `Error: ${error}`,
+            metadata: {
+              tool_name: toolName,
+              tool_args: toolArgs,
+              is_error: true
+            }
+          });
+          
+          toolResultContent.push({
+            type: "tool_result",
+            tool_use_id: content.id,
+            content: formattedContent
           });
         }
       }
@@ -203,6 +223,8 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
             content: msg.content.map(item => ({
               type: "tool_result",
               tool_use_id: item.tool_use_id,
+              tool_name: item.tool_name,
+              tool_args: item.tool_args,
               content: "[Previous tool result removed]" // Minimal placeholder
             }))
           };
@@ -214,11 +236,19 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
         role: "user" as const,
         content: toolResultContent
       });
-      log.info("added new tool results to conversation history");
     } else {
       // No tools used, we're done
       isProcessing = false;
       log.success("agent loop complete, no more tool calls");
+    }
+    
+    // Add progress marker every 3 iterations
+    if (iterations > 1 && iterations % 3 === 0) {
+      conversationHistory.push({ 
+        role: "assistant" as const, 
+        content: `step ${iterations}: progress so far. continuing to work on original query: "${query}"` 
+      });
+      log.info(`added progress marker at iteration ${iterations}`);
     }
   }
   

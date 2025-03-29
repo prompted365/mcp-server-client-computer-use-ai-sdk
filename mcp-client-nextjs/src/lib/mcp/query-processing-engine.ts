@@ -213,7 +213,6 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
         role: "user" as const,
         content: toolResultContent
       });
-      log.info("added new tool results to conversation history");
     } else {
       // No tools used, we're done
       isProcessing = false;
