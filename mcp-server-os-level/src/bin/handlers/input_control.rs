@@ -22,8 +22,18 @@ pub async fn input_control_handler(
     // Execute appropriate input action
     match payload.action {
         InputAction::KeyPress(key) => {
-            // Implement key press using appropriate library or command
-            let script = format!("tell application \"System Events\" to key code {}", key);
+            // Add key name to key code mapping
+            let key_code = match key.as_str() {
+                "Tab" => "48",      // Tab key code
+                "Return" => "36",   // Enter/Return key code
+                "Space" => "49",    // Space key code
+                "Escape" => "53",   // Escape key code
+                // Add more key mappings as needed
+                _ => key.as_str(),  // Use as-is if it's already a number
+            };
+            
+            let script = format!("tell application \"System Events\" to key code {}", key_code);
+            info!("executing key press script: {}", script);
             if let Err(e) = Command::new("osascript").arg("-e").arg(script).output() {
                 error!("failed to press key: {}", e);
                 return Err((
