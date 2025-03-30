@@ -8,14 +8,14 @@ use serde::Serialize;
 use serde_json::json;
 use computer_use_ai_sdk::Desktop;
 
-use crate::types::{AppState, OpenApplicationRequest, OpenApplicationResponse, ListInteractableElementsResponse};
-use crate::refresh_elements_after_action;
+use crate::types::{AppState, OpenApplicationRequest, OpenApplicationResponse, ListElementsAndAttributesResponse};
+use crate::refresh_elements_and_attributes_after_action;
 
 // Response type that combines both results
 #[derive(Serialize)]
 pub struct OpenApplicationWithElementsResponse {
     pub application: OpenApplicationResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 pub async fn open_application_handler(
@@ -43,7 +43,7 @@ pub async fn open_application_handler(
             };
             
             // Get refreshed elements using the helper function - use a longer delay for app startup
-            let elements_response = refresh_elements_after_action(state, request.app_name.clone(), 1000).await;
+            let elements_response = refresh_elements_and_attributes_after_action(state, request.app_name.clone(), 1000).await;
             
             // Return combined response
             Ok(JsonResponse(OpenApplicationWithElementsResponse {
