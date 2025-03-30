@@ -91,12 +91,47 @@ pub fn handle_initialize(id: Value) -> JsonResponse<Value> {
         "type": "object",
         "properties": {
             "action": {
-                "type": "object",
-                "properties": {
-                    "type": {"type": "string", "enum": ["KeyPress", "MouseMove", "MouseClick", "WriteText"]},
-                    "data": {"type": ["string", "object"]}
-                },
-                "required": ["type"]
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": { "type": "string", "enum": ["KeyPress"] },
+                            "data": { "type": "string", "description": "Key code number or key name" }
+                        },
+                        "required": ["type", "data"]
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": { "type": "string", "enum": ["MouseMove"] },
+                            "data": { 
+                                "type": "object",
+                                "properties": {
+                                    "x": { "type": "number" },
+                                    "y": { "type": "number" }
+                                },
+                                "required": ["x", "y"]
+                            }
+                        },
+                        "required": ["type", "data"]
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": { "type": "string", "enum": ["MouseClick"] },
+                            "data": { "type": "string", "enum": ["left", "right"], "default": "left" }
+                        },
+                        "required": ["type", "data"]
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": { "type": "string", "enum": ["WriteText"] },
+                            "data": { "type": "string" }
+                        },
+                        "required": ["type", "data"]
+                    }
+                ]
             }
         },
         "required": ["action"]
@@ -131,7 +166,7 @@ pub fn handle_initialize(id: Value) -> JsonResponse<Value> {
         },
         ToolFunctionDefinition {
             name: "inputControl".to_string(),
-            description: "perform direct input control actions and return the list of interactable elements from the current app".to_string(),
+            description: "perform direct input control actions with these formats: KeyPress(string keyCode/name), MouseMove({x:number, y:number}), MouseClick(string 'left'/'right'), WriteText(string text). returns updated element list.".to_string(),
             parameters: input_control_schema,
         },
     ];
