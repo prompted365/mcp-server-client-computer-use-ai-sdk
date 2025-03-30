@@ -51,22 +51,83 @@ pub async fn open_url_handler(
     };
 
     // Open the URL
-    let browser_name = request.browser.clone().unwrap_or_else(|| "Safari".to_string());
     let browser_ref = request.browser.as_deref();
     
-    debug!("opening url {} in browser {}", request.url, browser_name);
+    if let Some(browser) = browser_ref {
+        debug!("opening url {} in specified browser: {}", request.url, browser);
+    } else {
+        debug!("opening url {} in system default browser", request.url);
+    }
     
     match desktop.open_url(&request.url, browser_ref) {
         Ok(_) => {
-            // URL opened successfully
-            info!("successfully opened url: {}", request.url);
-            let url_response = OpenUrlResponse {
-                success: true,
-                message: format!("successfully opened URL: {}", request.url),
+            // Wait for browser to start/activate
+            tokio::time::sleep(tokio::time::Duration::from_millis(800)).await;
+            
+            // Determine which browser to use for refreshing elements
+            let browser_for_refresh: Option<String> = if let Some(browser) = &request.browser {
+                // If user specified a browser, use that
+                info!("using specified browser for refresh: {}", browser);
+                
+                // Map common browser names to possible variations
+                let browser_search = match browser.as_str() {
+                    "Google Chrome" => "Chrome",
+                    "Microsoft Edge" => "Edge",
+                    _ => browser.as_str(),
+                };
+                
+                debug!("searching for browser as: {}", browser_search);
+                
+                if desktop.application(browser_search).is_ok() {
+                    info!("found browser with name: {}", browser_search);
+                    Some(browser_search.to_string())
+                } else {
+                    info!("could not find browser with name: {}", browser_search);
+                    None
+                }
+            } else {
+                // Try to detect which browser is running
+                let likely_browsers = ["Arc", "Safari", "Chrome", "Firefox", "Edge", "Opera", "Brave"];
+                let mut detected = None;
+                
+                for browser in likely_browsers.iter() {
+                    match desktop.application(browser) {
+                        Ok(_) => {
+                            info!("detected browser for refresh: {}", browser);
+                            detected = Some(browser.to_string());
+                            break;
+                        },
+                        Err(_) => continue,
+                    }
+                }
+                
+                // If we couldn't detect a specific browser, we don't do element refresh
+                if detected.is_none() {
+                    info!("could not detect which browser was used - skipping element refresh");
+                }
+                
+                detected
             };
             
-            // Get refreshed elements using the helper function - use a longer delay for page loading
-            let elements_response = refresh_elements_and_attributes_after_action(state, browser_name, 2000).await;
+            info!("successfully opened url: {}", request.url);
+            
+            // Create success response
+            let url_response = OpenUrlResponse {
+                success: true,
+                message: if let Some(browser) = &browser_for_refresh {
+                    format!("successfully opened URL: {} in browser: {}", request.url, browser)
+                } else {
+                    format!("successfully opened URL: {} in default browser (unknown)", request.url)
+                },
+            };
+            
+            // Only attempt to refresh elements if we know which browser to target
+            let elements_response = if let Some(browser) = browser_for_refresh {
+                refresh_elements_and_attributes_after_action(state, browser, 2000).await
+            } else {
+                // If we don't know which browser was used, don't try to refresh elements
+                None
+            };
             
             // Return combined response
             Ok(JsonResponse(OpenUrlWithElementsResponse {
@@ -83,3 +144,34 @@ pub async fn open_url_handler(
         },
     }
 }
+/*
+
+curl -X POST http://localhost:8080/api/open-url \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://twitter.com"}' \
+  | jq -r '"url opening:",
+    "  success: \(.url.success)",
+    "  message: \(.url.message)",
+    "\nelements: \(if .elements then
+      if .elements.elements then
+        .elements.elements | map("\n  [\(.index)]: \(.role)\(if .text then " \"\(.text)\"" else "" end)") | join("")
+      else
+        "\n  no elements found"
+      end
+    else
+      "\n  no elements info available"
+    end)",
+    "\nstats summary: \(if .elements then
+      "\n  count: \(.elements.stats.count)",
+      "  with_text_count: \(.elements.stats.with_text_count)",
+      "  without_text_count: \(.elements.stats.without_text_count)",
+      "  excluded_count: \(.elements.stats.excluded_count)",
+      "  processing time: \(.elements.processing_time_seconds)s",
+      "  cache_id: \(.elements.cache_info.cache_id)",
+      "  expires_at: \(.elements.cache_info.expires_at)",
+      "  element_count: \(.elements.cache_info.element_count)"
+    else
+      "\n  no stats available"
+    end)"'
+  
+*/
