@@ -12,9 +12,9 @@ use crate::types::{AppState, ExecuteToolFunctionParams, GetTextRequest,
                    ClickByIndexRequest, TypeByIndexRequest, PressKeyByIndexRequest,
                    OpenApplicationRequest, InputControlRequest, OpenUrlRequest};
 
-// Keep the handler function imports
+// Update handler imports
 use crate::handlers::get_text::get_text_handler;
-use crate::handlers::list_elements::list_interactable_elements_handler;
+use crate::handlers::list_elements_and_attributes::list_elements_and_attributes_handler;
 use crate::handlers::click_by_index::click_by_index_handler;
 use crate::handlers::type_by_index::type_by_index_handler;
 use crate::handlers::press_key_by_index::press_key_by_index_handler;
@@ -244,7 +244,7 @@ pub async fn handle_execute_tool_function(
                 }
             };
             
-            match list_interactable_elements_handler(State(state.clone()), Json(request)).await {
+            match list_elements_and_attributes_handler(State(state.clone()), Json(request)).await {
                 Ok(response) => {
                     JsonResponse(json!({
                         "jsonrpc": "2.0",
@@ -252,7 +252,8 @@ pub async fn handle_execute_tool_function(
                         "result": {
                             "elements": response.0.elements,
                             "stats": response.0.stats,
-                            "cache_info": response.0.cache_info
+                            "cache_info": response.0.cache_info,
+                            "processing_time_seconds": response.0.processing_time_seconds
                         }
                     }))
                 },
