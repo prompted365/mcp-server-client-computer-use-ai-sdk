@@ -161,7 +161,7 @@ pub fn handle_initialize(id: Value) -> JsonResponse<Value> {
         },
         ToolFunctionDefinition {
             name: "openUrl".to_string(),
-            description: "open a url in a browser and return the list of interactable elements in the browser. evaluate success by confirming expected page content is visible.".to_string(),
+            description: "open a url in a browser and return the list of interactable elements in the browser. if browser is not specified, chrome will be used by default. evaluate success by confirming expected page content is visible.".to_string(),
             parameters: open_url_schema,
         },
         ToolFunctionDefinition {
