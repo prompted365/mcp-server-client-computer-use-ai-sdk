@@ -1,30 +1,76 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { logBuffer } from './log-buffer';
 
 // enhanced logging utility with colors for better readability
 export const log = {
-  info: (msg: string, ...args: unknown[]) => console.log(`\x1b[36m[info]\x1b[0m ${msg}`, ...args), 
-  success: (msg: string, ...args: unknown[]) => console.log(`\x1b[32m[success]\x1b[0m ${msg}`, ...args),
-  error: (msg: string, ...args: unknown[]) => console.error(`\x1b[31m[error]\x1b[0m ${msg}`, ...args),
-  warn: (msg: string, ...args: unknown[]) => console.log(`\x1b[33m[warn]\x1b[0m ${msg}`, ...args),
-  debug: (msg: string, ...args: unknown[]) => console.log(`\x1b[90m[debug]\x1b[0m ${msg}`, ...args),
+  info: (msg: string, ...args: unknown[]) => {
+    console.log(`\x1b[36m[info]\x1b[0m ${msg}`, ...args);
+    logBuffer.addLog('info', formatLogMessage(msg, args));
+  }, 
+  success: (msg: string, ...args: unknown[]) => {
+    console.log(`\x1b[32m[success]\x1b[0m ${msg}`, ...args);
+    logBuffer.addLog('success', formatLogMessage(msg, args));
+  },
+  error: (msg: string, ...args: unknown[]) => {
+    console.error(`\x1b[31m[error]\x1b[0m ${msg}`, ...args);
+    logBuffer.addLog('error', formatLogMessage(msg, args));
+  },
+  warn: (msg: string, ...args: unknown[]) => {
+    console.log(`\x1b[33m[warn]\x1b[0m ${msg}`, ...args);
+    logBuffer.addLog('warn', formatLogMessage(msg, args));
+  },
+  debug: (msg: string, ...args: unknown[]) => {
+    console.log(`\x1b[90m[debug]\x1b[0m ${msg}`, ...args);
+    logBuffer.addLog('debug', formatLogMessage(msg, args));
+  },
   // New logging methods for specific UI elements
-  highlight: (msg: string, ...args: unknown[]) => console.log(`\x1b[1m\x1b[35m${msg}\x1b[0m`, ...args),
-  iteration: (msg: string, ...args: unknown[]) => console.log(`\x1b[36m${msg}\x1b[0m`, ...args),
-  response: (msg: string) => console.log(`\n\x1b[1m\x1b[37mresponse:\x1b[0m ${msg}`),
+  highlight: (msg: string, ...args: unknown[]) => {
+    console.log(`\x1b[1m\x1b[35m${msg}\x1b[0m`, ...args);
+    logBuffer.addLog('highlight', formatLogMessage(msg, args));
+  },
+  iteration: (msg: string, ...args: unknown[]) => {
+    console.log(`\x1b[36m${msg}\x1b[0m`, ...args);
+    logBuffer.addLog('iteration', formatLogMessage(msg, args));
+  },
+  response: (msg: string) => {
+    console.log(`\n\x1b[1m\x1b[37mresponse:\x1b[0m ${msg}`);
+    logBuffer.addLog('response', msg);
+  },
   tool: (name: string, result: unknown) => {
-    const truncateJSON = (obj: unknown, maxLength = 500): string => {
-      const str = JSON.stringify(obj);
-      if (str.length <= maxLength) return str;
-      return str.substring(0, maxLength) + '... [truncated]';
-    };
-    
+    const truncatedResult = truncateJSON(result);
     if (typeof result === 'object' && result !== null && 'isError' in result) {
-      console.log(`\x1b[31m[tool ${name}]\x1b[0m ${truncateJSON(result)}`);
+      console.log(`\x1b[31m[tool ${name}]\x1b[0m ${truncatedResult}`);
+      logBuffer.addLog('tool-error', `[${name}] ${truncatedResult}`);
     } else {
-      console.log(`\x1b[32m[tool ${name}]\x1b[0m ${truncateJSON(result)}`);
+      console.log(`\x1b[32m[tool ${name}]\x1b[0m ${truncatedResult}`);
+      logBuffer.addLog('tool', `[${name}] ${truncatedResult}`);
     }
   }
 };
+
+// Helper functions
+function formatLogMessage(msg: string, args: unknown[]): string {
+  if (args.length === 0) return msg;
+  
+  try {
+    const formattedArgs = args.map(arg => 
+      typeof arg === 'object' ? truncateJSON(arg) : String(arg)
+    ).join(' ');
+    return `${msg} ${formattedArgs}`;
+  } catch (e) {
+    return `${msg} [args formatting error]`;
+  }
+}
+
+function truncateJSON(obj: unknown, maxLength = 500): string {
+  try {
+    const str = JSON.stringify(obj);
+    if (str.length <= maxLength) return str;
+    return str.substring(0, maxLength) + '... [truncated]';
+  } catch (e) {
+    return '[unserializable object]';
+  }
+}
 
 type MCPResponse = {
   result?: unknown;
