@@ -43,7 +43,18 @@ pub async fn open_application_handler(
             };
             
             // Get refreshed elements using the helper function - use a longer delay for app startup
-            let elements_response = refresh_elements_and_attributes_after_action(state, request.app_name.clone(), 1000).await;
+            let mut elements_response = refresh_elements_and_attributes_after_action(state.clone(), request.app_name.clone(), 1000).await;
+            
+            // If elements retrieval failed, wait 500ms and retry once
+            if elements_response.is_none() {
+                log::info!("elements retrieval failed for {}, retrying after 500ms", request.app_name);
+                tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+                elements_response = refresh_elements_and_attributes_after_action(state, request.app_name.clone(), 500).await;
+                
+                if elements_response.is_none() {
+                    log::warn!("elements retrieval failed for {} even after retry", request.app_name);
+                }
+            }
             
             // Return combined response
             Ok(JsonResponse(OpenApplicationWithElementsResponse {
