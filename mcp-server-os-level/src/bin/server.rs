@@ -20,7 +20,7 @@ use handlers::press_key_by_index::press_key_by_index_handler;
 use handlers::open_application::open_application_handler;
 use handlers::open_url::open_url_handler;
 use handlers::input_control::input_control_handler;
-use handlers::list_elements_and_attributes::list_element_attributes_handler;
+use handlers::list_elements_and_attributes::list_elements_and_attributes_handler;
 use handlers::utils::*;
 
 // ================ Main ================
@@ -55,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/open-application", post(open_application_handler))
         .route("/api/open-url", post(open_url_handler))
         .route("/api/input-control", post(input_control_handler))
-        .route("/api/list-element-attributes", post(list_element_attributes_handler))
+        .route("/api/list-elements-and-attributes", post(list_elements_and_attributes_handler))
         .with_state(app_state)
         .layer(cors)
         .layer(TraceLayer::new_for_http());
