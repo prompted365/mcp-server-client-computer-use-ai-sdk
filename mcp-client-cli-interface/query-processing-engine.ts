@@ -187,8 +187,6 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
     let toolResultContent: Array<{
       type: string;
       tool_use_id: string;
-      tool_name: string;
-      tool_args: string;
       content: string;
       is_error?: boolean;
     }> = [];
