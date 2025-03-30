@@ -8,14 +8,14 @@ use serde::Serialize;
 use serde_json::json;
 use tracing::error;
 
-use crate::types::{AppState, ClickByIndexRequest, ClickByIndexResponse, ListInteractableElementsResponse};
-use crate::refresh_elements_after_action;
+use crate::types::{AppState, ClickByIndexRequest, ClickByIndexResponse, ListElementsAndAttributesResponse};
+use crate::refresh_elements_and_attributes_after_action;
 
 // Response type that combines both click result and elements
 #[derive(Serialize)]
 pub struct ClickByIndexWithElementsResponse {
     pub click: ClickByIndexResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 pub async fn click_by_index_handler(
@@ -56,7 +56,7 @@ pub async fn click_by_index_handler(
                         };
                         
                         // Get refreshed elements using the helper function
-                        let elements_response = refresh_elements_after_action(state, app_name.clone(), 500).await;
+                        let elements_response = refresh_elements_and_attributes_after_action(state, app_name.clone(), 500).await;
                         
                         // Return combined response
                         Ok(JsonResponse(ClickByIndexWithElementsResponse {
