@@ -6,14 +6,13 @@ use serde_json::{self, json, Value};
 use std::sync::Arc;
 use tracing::{info, error};
 
-use crate::types::{AppState, ExecuteToolFunctionParams, GetTextRequest, 
+use crate::types::{AppState, ExecuteToolFunctionParams, 
                    ListInteractableElementsRequest, MCPRequest, ServerCapabilities, 
                    ToolFunctionDefinition, ToolServerCapabilities,
                    ClickByIndexRequest, TypeByIndexRequest, PressKeyByIndexRequest,
                    OpenApplicationRequest, InputControlRequest, OpenUrlRequest};
 
 // Update handler imports
-use crate::handlers::get_text::get_text_handler;
 use crate::handlers::list_elements_and_attributes::list_elements_and_attributes_handler;
 use crate::handlers::click_by_index::click_by_index_handler;
 use crate::handlers::type_by_index::type_by_index_handler;
@@ -45,18 +44,6 @@ pub async fn mcp_handler(
 
 // Handler for initialize method
 pub fn handle_initialize(id: Value) -> JsonResponse<Value> {
-    let get_text_schema = json!({
-        "type": "object",
-        "properties": {
-            "app_name": {"type": "string"},
-            "window_name": {"type": "string"},
-            "max_depth": {"type": "integer"},
-            "use_background_apps": {"type": "boolean"},
-            "activate_app": {"type": "boolean"}
-        },
-        "required": ["app_name"]
-    });
-    
     let click_by_index_schema = json!({
         "type": "object",
         "properties": {
@@ -117,11 +104,6 @@ pub fn handle_initialize(id: Value) -> JsonResponse<Value> {
     
     // Define tool functions
     let tool_functions = vec![
-        ToolFunctionDefinition {
-            name: "getText".to_string(),
-            description: "extract text from an application or browser window".to_string(),
-            parameters: get_text_schema,
-        },
         ToolFunctionDefinition {
             name: "clickByIndex".to_string(),
             description: "click on a ui element by its index and returns the updated element list".to_string(),
@@ -195,41 +177,6 @@ pub async fn handle_execute_tool_function(
     
     // Execute the appropriate function
     match execute_params.function.as_str() {
-        "getText" => {
-            let request: GetTextRequest = match serde_json::from_value(execute_params.arguments) {
-                Ok(r) => r,
-                Err(e) => {
-                    error!("invalid arguments: {}", e);
-                    return mcp_error_response(
-                        id, 
-                        -32602, 
-                        format!("invalid arguments: {}", e), 
-                        None
-                    );
-                }
-            };
-            
-            match get_text_handler(State(state), Json(request)).await {
-                Ok(response) => {
-                    JsonResponse(json!({
-                        "jsonrpc": "2.0",
-                        "id": id,
-                        "result": {
-                            "success": response.0.success,
-                            "text": response.0.text
-                        }
-                    }))
-                },
-                Err((status, error_json)) => {
-                    mcp_error_response(
-                        id, 
-                        status.as_u16() as i32, 
-                        error_json.0["error"].as_str().unwrap_or("unknown error").to_string(),
-                        None
-                    )
-                }
-            }
-        },
         "listInteractableElementsByIndex" => {
             let request: ListInteractableElementsRequest = match serde_json::from_value(execute_params.arguments) {
                 Ok(r) => r,
