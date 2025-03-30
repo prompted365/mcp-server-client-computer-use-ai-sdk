@@ -1,5 +1,6 @@
 import { desktopClient, log } from './start-here';
 import Anthropic from "@anthropic-ai/sdk";
+import { clearLogs } from './log-buffer';
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -75,7 +76,45 @@ function trimConversationHistory(history: typeof conversationHistory, maxTokens 
   return trimmedHistory;
 }
 
+// Add retry logic for Anthropic API calls
+async function callAnthropicWithRetry(params, maxRetries = 5, initialDelay = 1000) {
+  let retries = 0;
+  let delay = initialDelay;
+  
+  while (retries < maxRetries) {
+    try {
+      log.info(`making anthropic api call, attempt ${retries + 1}/${maxRetries}`);
+      const startTime = Date.now();
+      const result = await anthropic.messages.create(params);
+      const elapsedMs = Date.now() - startTime;
+      log.info(`anthropic api call completed in ${elapsedMs}ms`);
+      return result;
+    } catch (error) {
+      if (error.status === 529 || (error.headers && error.headers['x-should-retry'] === 'true')) {
+        retries++;
+        if (retries >= maxRetries) {
+          log.error(`max retries (${maxRetries}) reached, giving up`);
+          throw error;
+        }
+        
+        // Exponential backoff with jitter
+        const jitter = Math.random() * 0.3 + 0.85; // Random factor between 0.85-1.15
+        delay = delay * 1.5 * jitter;
+        
+        log.warn(`anthropic api overloaded, retry ${retries}/${maxRetries} in ${Math.round(delay)}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        // Different error, don't retry
+        throw error;
+      }
+    }
+  }
+}
+
 export async function processUserQuery(query: string, maxTokens = 1000000, maxIterations = 100) {
+  // Clear logs at the start of processing a new query
+  clearLogs();
+  
   // Get available tools
   const toolsResponse = await desktopClient.listTools();
   const tools = toolsResponse.tools.map(tool => {
@@ -96,6 +135,12 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
   conversationHistory.push({ 
     role: "user" as const, 
     content: query 
+  });
+  
+  // Add system instruction at the beginning of the conversation
+  conversationHistory.push({ 
+    role: "assistant" as const, 
+    content: `i'll help you with: "${query}". i'll break this down into steps and use tools as needed.` 
   });
   
   // Implement proper agent loop
@@ -124,8 +169,8 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
     // Trim history before sending to Claude
     const trimmedHistory = trimConversationHistory(conversationHistory);
     
-    // Call Claude with tools and trimmed history
-    const response = await anthropic.messages.create({
+    // Call Claude with tools and trimmed history using retry logic
+    const response = await callAnthropicWithRetry({
       model: "claude-3-7-sonnet-20250219",
       max_tokens: 1024,
       messages: trimmedHistory,
@@ -162,28 +207,47 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
                 
         // Execute the tool via MCP
         try {
+          const toolStartTime = Date.now();
           const result = await desktopClient.callTool(toolName, toolArgs as Record<string, any>);
+          const toolElapsedMs = Date.now() - toolStartTime;
+          log.info(`tool '${toolName}' executed in ${toolElapsedMs}ms`);
           
-          // Format tool result for conversation history
-          // Convert object results to strings to match Anthropic's API requirements
-          const resultContent = typeof result === 'object' ? 
-            JSON.stringify(result) : 
-            String(result);
+          // Create structured content that includes all the info we want
+          const formattedContent = JSON.stringify({
+            result: result,
+            metadata: {
+              tool_name: toolName,
+              tool_args: toolArgs,
+              is_error: false,
+              execution_time_ms: toolElapsedMs
+            }
+          });
           
           toolResultContent.push({
             type: "tool_result",
             tool_use_id: content.id,
-            content: resultContent
+            content: formattedContent
           });
           
         } catch (error) {
-          // Add error result as string
+          // Error case - still include all metadata
+          const formattedContent = JSON.stringify({
+            result: `Error: ${error}`,
+            metadata: {
+              tool_name: toolName,
+              tool_args: toolArgs,
+              is_error: true
+            }
+          });
+          
           toolResultContent.push({
             type: "tool_result",
             tool_use_id: content.id,
-            content: `Error: ${error}`,
+            content: formattedContent,
             is_error: true
           });
+          
+          log.error(`error executing tool '${toolName}': ${error}`);
         }
       }
     }
@@ -217,6 +281,15 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
       // No tools used, we're done
       isProcessing = false;
       log.success("agent loop complete, no more tool calls");
+    }
+    
+    // Add progress marker every 3 iterations
+    if (iterations > 1 && iterations % 3 === 0) {
+      conversationHistory.push({ 
+        role: "assistant" as const, 
+        content: `step ${iterations}: progress so far. continuing to work on original query: "${query}"` 
+      });
+      log.info(`added progress marker at iteration ${iterations}`);
     }
   }
   
