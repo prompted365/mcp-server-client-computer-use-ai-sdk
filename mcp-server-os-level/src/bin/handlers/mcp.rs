@@ -141,32 +141,32 @@ pub fn handle_initialize(id: Value) -> JsonResponse<Value> {
     let tool_functions = vec![
         ToolFunctionDefinition {
             name: "clickByIndex".to_string(),
-            description: "click on a ui element by its index and returns the updated element list".to_string(),
+            description: "click on a ui element by its index and returns the updated element list. evaluate success by examining the updated elements to confirm ui responded as expected, not just whether the click executed.".to_string(),
             parameters: click_by_index_schema,
         },
         ToolFunctionDefinition {
             name: "typeByIndex".to_string(),
-            description: "type text into a ui element by its index and returns the updated element list".to_string(),
+            description: "type text into a ui element by its index and returns the updated element list. evaluate success by examining if the text was accepted and ui updated appropriately.".to_string(),
             parameters: type_by_index_schema,
         },
         ToolFunctionDefinition {
             name: "pressKeyByIndex".to_string(),
-            description: "press key combination on a ui element by its index and returns the updated element list".to_string(),
+            description: "press key combination on a ui element by its index and returns the updated element list. evaluate success by examining if the key press triggered expected ui changes.".to_string(),
             parameters: press_key_by_index_schema,
         },
         ToolFunctionDefinition {
             name: "openApplication".to_string(),
-            description: "open an application and return the list of interactable elements in the app".to_string(),
+            description: "open an application and return the list of interactable elements in the app. evaluate success by checking if application window and controls are visible.".to_string(),
             parameters: open_application_schema,
         },
         ToolFunctionDefinition {
             name: "openUrl".to_string(),
-            description: "open a url in a browser and return the list of interactable elements in the browser".to_string(),
+            description: "open a url in a browser and return the list of interactable elements in the browser. evaluate success by confirming expected page content is visible.".to_string(),
             parameters: open_url_schema,
         },
         ToolFunctionDefinition {
             name: "inputControl".to_string(),
-            description: "perform direct input control actions with these formats: KeyPress(string keyCode/name), MouseMove({x:number, y:number}), MouseClick(string 'left'/'right'), WriteText(string text). returns updated element list.".to_string(),
+            description: "perform direct input control actions with these formats: KeyPress(string keyCode/name), MouseMove({x:number, y:number}), MouseClick(string 'left'/'right'), WriteText(string text). returns updated element list. evaluate success by confirming ui responded to the input as expected.".to_string(),
             parameters: input_control_schema,
         },
     ];
@@ -273,7 +273,14 @@ pub async fn handle_execute_tool_function(
                                 "success": response.0.click.success,
                                 "message": response.0.click.message
                             },
-                            "elements": response.0.elements
+                            "elements": response.0.elements,
+                            "ui_state_changed": true,
+                            "action_timestamp": chrono::Utc::now().to_rfc3339(),
+                            "evaluation_hints": [
+                                "check if expected ui elements appeared",
+                                "verify if target element state changed",
+                                "look for new controls or content that should be available after this action"
+                            ]
                         }
                     }))
                 },
@@ -311,7 +318,14 @@ pub async fn handle_execute_tool_function(
                                 "success": response.0.type_action.success,
                                 "message": response.0.type_action.message
                             },
-                            "elements": response.0.elements
+                            "elements": response.0.elements,
+                            "ui_state_changed": true,
+                            "action_timestamp": chrono::Utc::now().to_rfc3339(),
+                            "evaluation_hints": [
+                                "check if text field contains the typed content",
+                                "verify if any new ui elements appeared in response to input",
+                                "look for validation messages or response content"
+                            ]
                         }
                     }))
                 },
@@ -349,7 +363,14 @@ pub async fn handle_execute_tool_function(
                                 "success": response.0.press_key.success,
                                 "message": response.0.press_key.message
                             },
-                            "elements": response.0.elements
+                            "elements": response.0.elements,
+                            "ui_state_changed": true,
+                            "action_timestamp": chrono::Utc::now().to_rfc3339(),
+                            "evaluation_hints": [
+                                "check if expected keyboard shortcut effects occurred",
+                                "verify if target element state changed as expected",
+                                "look for new interface elements that appeared after key press"
+                            ]
                         }
                     }))
                 },
@@ -387,7 +408,14 @@ pub async fn handle_execute_tool_function(
                                 "success": response.0.application.success,
                                 "message": response.0.application.message
                             },
-                            "elements": response.0.elements
+                            "elements": response.0.elements,
+                            "ui_state_changed": true,
+                            "action_timestamp": chrono::Utc::now().to_rfc3339(),
+                            "evaluation_hints": [
+                                "verify the application window is visible in elements",
+                                "check for typical controls and interface elements of this application",
+                                "confirm the application is in its expected initial state"
+                            ]
                         }
                     }))
                 },
@@ -431,7 +459,14 @@ pub async fn handle_execute_tool_function(
                                 "success": response.0.url.success,
                                 "message": response.0.url.message
                             },
-                            "elements": response.0.elements
+                            "elements": response.0.elements,
+                            "ui_state_changed": true,
+                            "action_timestamp": chrono::Utc::now().to_rfc3339(),
+                            "evaluation_hints": [
+                                "check for browser controls and expected page content",
+                                "verify page title or key elements from the requested site",
+                                "look for signs the page has fully loaded"
+                            ]
                         }
                     }))
                 },
@@ -468,7 +503,14 @@ pub async fn handle_execute_tool_function(
                             "input": {
                                 "success": response.0.input.success
                             },
-                            "elements": response.0.elements
+                            "elements": response.0.elements,
+                            "ui_state_changed": true,
+                            "action_timestamp": chrono::Utc::now().to_rfc3339(),
+                            "evaluation_hints": [
+                                "check if the ui responded appropriately to the input action",
+                                "verify cursor position changed for mouse moves",
+                                "look for content changes after text input or clicks"
+                            ]
                         }
                     }))
                 },
