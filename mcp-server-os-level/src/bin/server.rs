@@ -12,7 +12,6 @@ use types::*;
 mod handlers;
 
 // Import only the handlers actually used
-use handlers::get_text::get_text_handler;
 use handlers::mcp::mcp_handler;
 use handlers::click_by_index::click_by_index_handler;
 use handlers::type_by_index::type_by_index_handler;
@@ -47,7 +46,6 @@ async fn main() -> anyhow::Result<()> {
     
     // Create router with both existing and MCP endpoints plus new endpoints
     let app = Router::new()
-        .route("/api/get-text", post(get_text_handler))
         .route("/mcp", post(mcp_handler))
         .route("/api/click-by-index", post(click_by_index_handler))
         .route("/api/type-by-index", post(type_by_index_handler))
