@@ -372,12 +372,12 @@ fn generate_element_statistics(
 /*
 Test curl command provided you run the server, nicely formatted, provided you have jq, type in the app you want, e.g. Discord:
 
-curl -X POST http://localhost:8080/api/list-element-attributes \
+curl -X POST http://localhost:8080/api/list-elements-and-attributes \
   -H "Content-Type: application/json" \
-  -d '{"app_name": "Discord", "max_depth": 3, "max_elements": 3000}' \
-  | jq -r '(.elements[] | "[\(.index)]: \(.role)\(if .text then " \"\(.text)\"" else "" end)"), 
-    "\n--- summary ---", 
-    "stats:", 
+  -d '{"app_name": "Whatsapp"}' \
+  | jq -r '(.elements[] | "[\(.index)]: \(.role)\(if .text then " \"\(.text)\"" else "" end)"),
+    "\n--- summary ---",
+    "stats:",
     "  count: \(.stats.count)",
     "  excluded_count: \(.stats.excluded_count)",
     "  excluded_non_interactable: \(.stats.excluded_non_interactable)",
@@ -385,8 +385,8 @@ curl -X POST http://localhost:8080/api/list-element-attributes \
     "  with_text_count: \(.stats.with_text_count)",
     "  without_text_count: \(.stats.without_text_count)",
     "  top_roles: \(.stats.top_roles | to_entries | map("    \(.key): \(.value)") | join("\n"))",
-    "processing time: \(.processing_time_seconds)s", 
-    "cache info:", 
+    "processing time: \(.processing_time_seconds)s",
+    "cache info:",
     "  cache_id: \(.cache_info.cache_id)",
     "  timestamp: \(.cache_info.timestamp)",
     "  expires_at: \(.cache_info.expires_at)",
