@@ -1,5 +1,4 @@
 // Export all handlers
-pub mod get_text;
 pub mod mcp;
 pub mod click_by_index;
 pub mod type_by_index;
