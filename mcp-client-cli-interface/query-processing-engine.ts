@@ -75,6 +75,40 @@ function trimConversationHistory(history: typeof conversationHistory, maxTokens 
   return trimmedHistory;
 }
 
+async function callAnthropicWithRetry(params, maxRetries = 5, initialDelay = 1000) {
+  let retries = 0;
+  let delay = initialDelay;
+  
+  while (retries < maxRetries) {
+    try {
+      log.info(`making anthropic api call, attempt ${retries + 1}/${maxRetries}`);
+      const startTime = Date.now();
+      const result = await anthropic.messages.create(params);
+      const elapsedMs = Date.now() - startTime;
+      log.info(`anthropic api call completed in ${elapsedMs}ms`);
+      return result;
+    } catch (error) {
+      if (error.status === 529 || (error.headers && error.headers['x-should-retry'] === 'true')) {
+        retries++;
+        if (retries >= maxRetries) {
+          log.error(`max retries (${maxRetries}) reached, giving up`);
+          throw error;
+        }
+        
+        // Exponential backoff with jitter
+        const jitter = Math.random() * 0.3 + 0.85; // Random factor between 0.85-1.15
+        delay = delay * 1.5 * jitter;
+        
+        log.warn(`anthropic api overloaded, retry ${retries}/${maxRetries} in ${Math.round(delay)}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        // Different error, don't retry
+        throw error;
+      }
+    }
+  }
+}
+
 export async function processUserQuery(query: string, maxTokens = 1000000, maxIterations = 100) {
   // Get available tools
   const toolsResponse = await desktopClient.listTools();
@@ -131,7 +165,7 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
     const trimmedHistory = trimConversationHistory(conversationHistory);
     
     // Call Claude with tools and trimmed history
-    const response = await anthropic.messages.create({
+    const response = await callAnthropicWithRetry({
       model: "claude-3-7-sonnet-20250219",
       max_tokens: 1024,
       messages: trimmedHistory,
@@ -170,7 +204,10 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
                 
         // Execute the tool via MCP
         try {
+          const toolStartTime = Date.now();
           const result = await desktopClient.callTool(toolName, toolArgs as Record<string, any>);
+          const toolElapsedMs = Date.now() - toolStartTime;
+          log.info(`tool '${toolName}' executed in ${toolElapsedMs}ms`);
           
           // Create structured content that includes all the info we want
           const formattedContent = JSON.stringify({
@@ -178,7 +215,8 @@ export async function processUserQuery(query: string, maxTokens = 1000000, maxIt
             metadata: {
               tool_name: toolName,
               tool_args: toolArgs,
-              is_error: false
+              is_error: false,
+              execution_time_ms: toolElapsedMs
             }
           });
           
