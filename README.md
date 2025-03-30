@@ -21,11 +21,11 @@
 
 ## Demos
 
+agent sending a message
+https://github.com/user-attachments/assets/f8687500-9a8c-4a96-81b6-77562feff093
+
 get latest whatsapp messages
 ![Image](https://github.com/user-attachments/assets/6401c930-07e5-4459-b54c-a8c70fdca73f)
-
-send message in imessage
-![Image](https://github.com/user-attachments/assets/46e02640-7ad2-4643-b213-df03abfddba7)
 
 open arc browser 
 ![Image](https://github.com/user-attachments/assets/8656be95-951d-4f13-8ee9-41babb821abb)
