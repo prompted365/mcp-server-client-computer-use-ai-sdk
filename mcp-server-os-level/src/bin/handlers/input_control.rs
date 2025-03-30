@@ -86,7 +86,7 @@ pub async fn input_control_handler(
             Some((_, _, cached_app_name)) => {
                 // We have a cached app name, so let's refresh elements
                 info!("refreshing elements for app: {}", cached_app_name);
-                refresh_elements_after_action(state.clone(), cached_app_name.clone(), 500).await
+                refresh_elements_and_attributes_after_action(state.clone(), cached_app_name.clone(), 500).await
             }
             None => {
                 // No cache available, don't try to refresh elements
@@ -103,14 +103,14 @@ pub async fn input_control_handler(
     }))
 }
 
-// Helper function to refresh elements after an action
-async fn refresh_elements_after_action(
+// Updated helper function to refresh elements after an action
+async fn refresh_elements_and_attributes_after_action(
     state: Arc<AppState>, 
     app_name: String,
     delay_ms: u64
-) -> Option<ListInteractableElementsResponse> {
+) -> Option<ListElementsAndAttributesResponse> {
     // Small delay to allow UI to update after action
-    info!("waiting for ui to update after action before listing elements");
+    info!("waiting for ui to update after action before listing elements and attributes");
     tokio::time::sleep(Duration::from_millis(delay_ms)).await;
     
     // Create request to refresh the elements list
@@ -121,12 +121,12 @@ async fn refresh_elements_after_action(
         activate_app: Some(true),
     };
     
-    // Call the list elements handler
-    match crate::handlers::list_elements::list_interactable_elements_handler(State(state), Json(elements_request)).await {
+    // Call the new list elements handler
+    match crate::handlers::list_elements_and_attributes::list_elements_and_attributes_handler(State(state), Json(elements_request)).await {
         Ok(response) => Some(response.0),
         Err(e) => {
             // Log the error but don't fail the whole request
-            error!("failed to list elements after action: {:?}", e);
+            error!("failed to list elements and attributes after action: {:?}", e);
             None
         }
     }

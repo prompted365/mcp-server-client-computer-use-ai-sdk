@@ -9,14 +9,14 @@ use serde_json::json;
 use tracing::{debug, error};
 use computer_use_ai_sdk::Desktop;
 
-use crate::types::{AppState, TypeByIndexRequest, TypeByIndexResponse, ListInteractableElementsResponse};
-use crate::refresh_elements_after_action;
+use crate::types::{AppState, TypeByIndexRequest, TypeByIndexResponse, ListElementsAndAttributesResponse};
+use crate::refresh_elements_and_attributes_after_action;
 
 // Response type that combines both results
 #[derive(Serialize)]
 pub struct TypeByIndexWithElementsResponse {
     pub type_action: TypeByIndexResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 pub async fn type_by_index_handler(
@@ -132,7 +132,7 @@ pub async fn type_by_index_handler(
                                     };
                                     
                                     // Get refreshed elements using the helper function
-                                    let elements_response = refresh_elements_after_action(state, app_name.clone(), 500).await;
+                                    let elements_response = refresh_elements_and_attributes_after_action(state, app_name.clone(), 500).await;
                                     
                                     // Return combined response
                                     Ok(JsonResponse(TypeByIndexWithElementsResponse {
@@ -161,7 +161,7 @@ pub async fn type_by_index_handler(
                             };
                             
                             // Get refreshed elements using the helper function
-                            let elements_response = refresh_elements_after_action(state, app_name.clone(), 500).await;
+                            let elements_response = refresh_elements_and_attributes_after_action(state, app_name.clone(), 500).await;
                             
                             // Return combined response
                             Ok(JsonResponse(TypeByIndexWithElementsResponse {

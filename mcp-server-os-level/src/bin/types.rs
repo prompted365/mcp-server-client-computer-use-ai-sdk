@@ -237,15 +237,6 @@ pub struct InteractableElement {
 }
 
 #[derive(Debug, Serialize)]
-pub struct ElementStats {
-    pub total: usize,
-    pub definitely_interactable: usize,
-    pub sometimes_interactable: usize,
-    pub non_interactable: usize,
-    pub by_role: HashMap<String, usize>,
-}
-
-#[derive(Debug, Serialize)]
 pub struct ElementCacheInfo {
     pub cache_id: String,
     pub timestamp: String,
@@ -254,11 +245,25 @@ pub struct ElementCacheInfo {
     pub ttl_seconds: u64,
 }
 
-#[derive(Debug, Serialize)]
-pub struct ListInteractableElementsResponse {
-    pub elements: Vec<serde_json::Value>, // Contains objects instead of arrays
-    pub stats: ElementStats,
+// Remove old ElementStats and add new ElementStatistics struct
+#[derive(serde::Serialize, Debug)]
+pub struct ElementStatistics {
+    pub count: usize,
+    pub excluded_count: usize,
+    pub excluded_non_interactable: usize,
+    pub excluded_no_text: usize,
+    pub with_text_count: usize,
+    pub without_text_count: usize,
+    pub top_roles: HashMap<String, u32>,
+    pub properties: HashMap<String, u32>,
+}
+
+#[derive(serde::Serialize, Debug)]
+pub struct ListElementsAndAttributesResponse {
+    pub elements: Vec<serde_json::Value>,
     pub cache_info: ElementCacheInfo,
+    pub stats: ElementStatistics,
+    pub processing_time_seconds: String,
 }
 
 // Types for index-based operations
@@ -271,7 +276,7 @@ pub struct ClickByIndexRequest {
 pub struct ClickByIndexResponse {
     pub success: bool,
     pub message: String,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -322,35 +327,35 @@ pub struct InputControlResponse {
 #[derive(Serialize)]
 pub struct InputControlWithElementsResponse {
     pub input: InputControlResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Serialize)]
 pub struct ClickByIndexWithElementsResponse {
     pub click: ClickByIndexResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Serialize)]
 pub struct TypeByIndexWithElementsResponse {
     pub type_action: TypeByIndexResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct PressKeyByIndexWithElementsResponse {
     pub press_key: PressKeyByIndexResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Serialize)]
 pub struct OpenApplicationWithElementsResponse {
     pub application: OpenApplicationResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Serialize)]
 pub struct OpenUrlWithElementsResponse {
     pub url: OpenUrlResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
