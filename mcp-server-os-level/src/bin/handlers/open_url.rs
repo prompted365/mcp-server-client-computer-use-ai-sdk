@@ -10,8 +10,8 @@ use tracing::{debug, error, info};
 use computer_use_ai_sdk::Desktop;
 
 use crate::types::AppState;
-use crate::refresh_elements_after_action;
-use crate::types::ListInteractableElementsResponse;
+use crate::refresh_elements_and_attributes_after_action;
+use crate::types::ListElementsAndAttributesResponse;
 
 #[derive(Deserialize)]
 pub struct OpenUrlRequest {
@@ -29,7 +29,7 @@ pub struct OpenUrlResponse {
 #[derive(Serialize)]
 pub struct OpenUrlWithElementsResponse {
     pub url: OpenUrlResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 pub async fn open_url_handler(
@@ -66,7 +66,7 @@ pub async fn open_url_handler(
             };
             
             // Get refreshed elements using the helper function - use a longer delay for page loading
-            let elements_response = refresh_elements_after_action(state, browser_name, 2000).await;
+            let elements_response = refresh_elements_and_attributes_after_action(state, browser_name, 2000).await;
             
             // Return combined response
             Ok(JsonResponse(OpenUrlWithElementsResponse {
