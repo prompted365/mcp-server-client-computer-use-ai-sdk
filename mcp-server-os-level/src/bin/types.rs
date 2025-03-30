@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc, time::Instant};
 use computer_use_ai_sdk::UIElement;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use serde_json::{Value, json};
+use serde_json::Value;
 
 // ================ Types ================
 
@@ -237,15 +237,6 @@ pub struct InteractableElement {
 }
 
 #[derive(Debug, Serialize)]
-pub struct ElementStats {
-    pub total: usize,
-    pub definitely_interactable: usize,
-    pub sometimes_interactable: usize,
-    pub non_interactable: usize,
-    pub by_role: HashMap<String, usize>,
-}
-
-#[derive(Debug, Serialize)]
 pub struct ElementCacheInfo {
     pub cache_id: String,
     pub timestamp: String,
@@ -254,11 +245,25 @@ pub struct ElementCacheInfo {
     pub ttl_seconds: u64,
 }
 
-#[derive(Debug, Serialize)]
-pub struct ListInteractableElementsResponse {
-    pub elements: Vec<serde_json::Value>, // Contains objects instead of arrays
-    pub stats: ElementStats,
+// Remove old ElementStats and add new ElementStatistics struct
+#[derive(serde::Serialize, Debug)]
+pub struct ElementStatistics {
+    pub count: usize,
+    pub excluded_count: usize,
+    pub excluded_non_interactable: usize,
+    pub excluded_no_text: usize,
+    pub with_text_count: usize,
+    pub without_text_count: usize,
+    pub top_roles: HashMap<String, u32>,
+    pub properties: HashMap<String, u32>,
+}
+
+#[derive(serde::Serialize, Debug)]
+pub struct ListElementsAndAttributesResponse {
+    pub elements: Vec<serde_json::Value>,
     pub cache_info: ElementCacheInfo,
+    pub stats: ElementStatistics,
+    pub processing_time_seconds: String,
 }
 
 // Types for index-based operations
@@ -271,7 +276,7 @@ pub struct ClickByIndexRequest {
 pub struct ClickByIndexResponse {
     pub success: bool,
     pub message: String,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -322,73 +327,35 @@ pub struct InputControlResponse {
 #[derive(Serialize)]
 pub struct InputControlWithElementsResponse {
     pub input: InputControlResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Serialize)]
 pub struct ClickByIndexWithElementsResponse {
     pub click: ClickByIndexResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Serialize)]
 pub struct TypeByIndexWithElementsResponse {
     pub type_action: TypeByIndexResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct PressKeyByIndexWithElementsResponse {
     pub press_key: PressKeyByIndexResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Serialize)]
 pub struct OpenApplicationWithElementsResponse {
     pub application: OpenApplicationResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
 
 #[derive(Serialize)]
 pub struct OpenUrlWithElementsResponse {
     pub url: OpenUrlResponse,
-    pub elements: Option<ListInteractableElementsResponse>,
-}
-
-// Re-export types from list_elements_and_attributes.rs
-// This is only needed if we want to use these types elsewhere
-#[derive(serde::Deserialize)]
-pub struct ListElementAttributesRequest {
-    pub app_name: String,
-    pub max_elements: Option<usize>,
-    pub max_depth: Option<usize>,
-    pub use_background_apps: Option<bool>,
-    pub activate_app: Option<bool>,
-    pub full_tree: Option<bool>,
-}
-
-#[derive(serde::Serialize)]
-pub struct ListElementAttributesResponse {
-    pub elements: Vec<ElementAttributesInfo>,
-    pub stats: ElementStatsExtended,
-    pub cache_info: ElementCacheInfo,
-}
-
-#[derive(serde::Serialize)]
-pub struct ElementAttributesInfo {
-    pub index: usize,
-    pub role: String,
-    pub attributes: HashMap<String, Value>,
-    pub bounds: Option<(f64, f64, f64, f64)>,
-    pub depth: usize,
-    pub parent_index: Option<usize>,
-    pub children_indices: Vec<usize>,
-}
-
-#[derive(serde::Serialize)]
-pub struct ElementStatsExtended {
-    pub total: usize,
-    pub by_role: HashMap<String, usize>,
-    pub by_attribute: HashMap<String, usize>,
-    pub max_depth: usize,
+    pub elements: Option<ListElementsAndAttributesResponse>,
 }
