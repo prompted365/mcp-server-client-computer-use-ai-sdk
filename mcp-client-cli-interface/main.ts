@@ -4,12 +4,6 @@ import { processUserQuery } from './query-processing-engine';
 import readline from 'readline';
 import inquirer from 'inquirer';
 
-// Predefined prompts
-const predefinedPrompts = [
-  "go to discord then call listInteractableElementsByIndex, then typebyindex word test, and then call pressbyindex with return key",
-  "send hello world message to partiful in messages app"
-];
-
 async function main() {
   // setup environment and check server
   await setupEnvironment();
