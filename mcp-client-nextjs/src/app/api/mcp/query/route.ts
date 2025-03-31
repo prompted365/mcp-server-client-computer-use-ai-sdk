@@ -26,22 +26,25 @@ export async function POST(request: NextRequest) {
     
     // Use the advanced query processing engine instead of direct client call
     log.highlight('processing query through agent loop');
-    const response = await processUserQuery(query);
     
-    log.success('query processed successfully');
-    
-    return NextResponse.json({
-      status: 'success',
-      response
-    });
+    try {
+      const response = await processUserQuery(query);
+      return NextResponse.json({ response });
+    } catch (error) {
+      log.error(`failed to process query: ${error.message}`);
+      
+      // Return proper error response with status code
+      return NextResponse.json(
+        { 
+          error: error.message,
+          status: 'error',
+          details: error.toString()
+        }, 
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    log.error('failed to process query:', error);
-    return NextResponse.json(
-      {
-        status: 'error',
-        error: `failed to process query: ${error instanceof Error ? error.message : String(error)}`
-      },
-      { status: 500 }
-    );
+    log.error(`error handling request: ${error}`);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
