@@ -73,11 +73,15 @@ function processQuery(input: string, rl: readline.Interface) {
   log.highlight("\nprocessing...");
   processUserQuery(input)
     .then(response => {
-      log.response(response);
+      // Only show success message if we actually got a valid response
+      if (response && !response.startsWith('Error:')) {
+        log.response(response);
+      }
       askQuestion(rl); // Continue with normal flow
     })
     .catch(error => {
-      log.error("error processing query:", error);
+      // Show error in red and with clear error prefix
+      log.error(`query failed: ${error.message || error}`);
       askQuestion(rl); // Continue with normal flow
     });
 }
