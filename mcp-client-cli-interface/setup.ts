@@ -37,6 +37,18 @@ export async function setupEnvironment() {
       process.exit(1);
     }
   }
+  
+  // Validate API key format
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey.startsWith('sk-ant-')) {
+    console.error("\n======================================");
+    console.error("invalid ANTHROPIC_API_KEY format");
+    console.error("api key should start with 'sk-ant-'");
+    console.error(`found: ${apiKey.substring(0, 7)}...`);
+    console.error("please check your .env file or config.json");
+    console.error("======================================\n");
+    process.exit(1); // Exit immediately with error code
+  }
 
   // check if rust mcp server is running
   const checkServer = async () => {
