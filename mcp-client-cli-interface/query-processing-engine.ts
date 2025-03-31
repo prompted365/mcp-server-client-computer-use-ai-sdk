@@ -1,9 +1,35 @@
 import { desktopClient, log } from './start-here';
 import Anthropic from "@anthropic-ai/sdk";
 
+// Validate Anthropic API key before initializing client
+function validateAnthropicApiKey(apiKey: string | undefined): { valid: boolean; message?: string } {
+  if (!apiKey) {
+    return { 
+      valid: false, 
+      message: "Missing ANTHROPIC_API_KEY - please set in .env file or config.json" 
+    };
+  }
+  
+  if (!apiKey.startsWith('sk-ant-')) {
+    return { 
+      valid: false, 
+      message: `Invalid ANTHROPIC_API_KEY format - should start with 'sk-ant-', found: ${apiKey.substring(0, 7)}...` 
+    };
+  }
+  
+  return { valid: true };
+}
+
+// Validate key before initializing client
+const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+const keyValidation = validateAnthropicApiKey(anthropicApiKey);
+if (!keyValidation.valid) {
+  log.error(`anthropic api key validation failed: ${keyValidation.message}`);
+}
+
 // Initialize Anthropic client
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: anthropicApiKey,
 });
 
 // Use the correct type from Anthropic SDK
@@ -76,6 +102,13 @@ function trimConversationHistory(history: typeof conversationHistory, maxTokens 
 }
 
 async function callAnthropicWithRetry(params, maxRetries = 5, initialDelay = 1000) {
+  // Validate API key at runtime before making any calls
+  const keyValidation = validateAnthropicApiKey(anthropicApiKey);
+  if (!keyValidation.valid) {
+    log.error(`cannot call anthropic api: ${keyValidation.message}`);
+    throw new Error(keyValidation.message);
+  }
+  
   let retries = 0;
   let delay = initialDelay;
   
@@ -88,6 +121,20 @@ async function callAnthropicWithRetry(params, maxRetries = 5, initialDelay = 100
       log.info(`anthropic api call completed in ${elapsedMs}ms`);
       return result;
     } catch (error) {
+      // Handle auth errors specifically
+      if (error.status === 401) {
+        const errMsg = `authentication error: invalid api key - ${error.error?.error?.message || 'please check your ANTHROPIC_API_KEY'}`;
+        log.error(errMsg);
+        throw new Error(errMsg);
+      }
+      
+      // Handle permission errors specifically 
+      if (error.status === 403) {
+        const errMsg = `permission error: ${error.error?.error?.message || 'your api key lacks permissions for this model'}`;
+        log.error(errMsg);
+        throw new Error(errMsg);
+      }
+      
       if (error.status === 529 || (error.headers && error.headers['x-should-retry'] === 'true')) {
         retries++;
         if (retries >= maxRetries) {
@@ -103,6 +150,7 @@ async function callAnthropicWithRetry(params, maxRetries = 5, initialDelay = 100
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
         // Different error, don't retry
+        log.error(`anthropic api error: ${error.status} ${JSON.stringify(error.error || {})}`);
         throw error;
       }
     }
@@ -110,6 +158,13 @@ async function callAnthropicWithRetry(params, maxRetries = 5, initialDelay = 100
 }
 
 export async function processUserQuery(query: string, maxTokens = 1000000, maxIterations = 100) {
+  // Validate API key before proceeding with query
+  const keyValidation = validateAnthropicApiKey(anthropicApiKey);
+  if (!keyValidation.valid) {
+    log.error(`cannot process query: ${keyValidation.message}`);
+    throw new Error(keyValidation.message);
+  }
+  
   // Get available tools
   const toolsResponse = await desktopClient.listTools();
   const tools = toolsResponse.tools.map(tool => {
