@@ -10,10 +10,10 @@ use tracing::{debug, error, info};
 use computer_use_ai_sdk::Desktop;
 
 use crate::types::AppState;
-use crate::refresh_elements_and_attributes_after_action;
+use crate::handlers::utils::refresh_elements_and_attributes_after_action;
 use crate::types::ListElementsAndAttributesResponse;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct OpenUrlRequest {
     pub url: String,
     pub browser: Option<String>,
