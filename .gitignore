@@ -1,40 +1,11 @@
-# node/typescript
-node_modules/
-dist/
-build/
-*.log
-.npm
+node_modules
 .env
-.env.*
-*.tsbuildinfo
-
-# rust
-/target/
-**/target/
-Cargo.lock
-**/*.rs.bk
-
-# os specific
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# editors
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-.idea/
-*.sublime-*
-
-# logs and databases
+.mcp_config.db
+.mcp_config.db-journal
+.next
+dist
+out
 *.log
-*.sql
-*.sqlite
-*.sqlite3
-
-# build artifacts
-*.o
-*.a
-*.so
+*.zip
+certbot/conf
+certbot/www
